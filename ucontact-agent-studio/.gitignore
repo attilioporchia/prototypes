@@ -1,0 +1,12 @@
+# fetched by ./fetch-libs.sh — large, unchanging, not worth versioning
+babel.js
+react.js
+react-dom.js
+rdsl.js
+
+# build intermediates (mk.py regenerates all of these)
+build/app.js
+build/parts.js
+compile.js
+
+.DS_Store
