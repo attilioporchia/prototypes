@@ -1,0 +1,5 @@
+node_modules
+# dist is committed on purpose: the launcher serves it without Node
+.env
+.env.*
+.DS_Store
