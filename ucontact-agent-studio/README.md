@@ -1,7 +1,7 @@
 # uContact Agent Studio
 
 A clickable prototype of the **AI Agent Wizard**: a supervisor builds, tests, versions and
-deploys an AI voice agent for a contact centre — without ever seeing or writing a prompt.
+puts live an AI voice agent for a contact centre — without ever seeing or writing a prompt.
 
 **Open [`ucontact-agent-studio.html`](ucontact-agent-studio.html) in a browser.** No server, no
 install, no build step: the whole app, React included, is inlined in that one file. It reaches
@@ -13,11 +13,12 @@ the network only for its web fonts.
 
 - **The wizard** — direction and job, voice and language, scope brief, rules, test. Five
   templates; one (Receptionist) is inbound-only and cannot be chosen for outbound.
-- **Versions and deploy** — every edit writes a version. Opening one shows *what would change if
-  you deployed it*, compared against the version running now: single values old-against-new,
-  lists item by item, each line marked gains / loses / changes. Recover loads a version onto the
-  Scope screen for review; deploying stays a separate, explicit step, gated on the agent being in
-  a dialer.
+- **Versions** — there are no drafts: every save writes a version and that version is the one
+  the agent runs. **Live** only means the agent is in a dialer in the Outbound Hub; saving an edit
+  of a live agent warns first, because it replaces the running version. Opening an older version
+  shows *what would change if you recovered it*, against the current one: single values
+  old-against-new, lists item by item, each line marked gains / loses / changes. Recover loads a
+  version onto the Scope screen for review; nothing changes until it is saved.
 - **Corrections** — pick a line from a past interaction, propose a rule, approve it, and it
   becomes part of the agent's configuration.
 - **Interactions** — a log mixing AI-handled and human-handled rows, with a detail view
@@ -26,7 +27,7 @@ the network only for its web fonts.
 ## What it deliberately does not model
 
 The prototype models the lifecycle of an agent's *configuration*, not the platform around it.
-A dialer is a name in an array that gates the Deploy button. **Outbound hub, queues, campaigns,
+A dialer is a name in an array that decides the Live badge. **Outbound hub, queues, campaigns,
 contact lists and dispositions are labels with no behaviour behind them**, and the agent has no
 access to customer records — the simulated conversation is a pattern match over what you type.
 Worth knowing before demoing it as an integration.
@@ -56,8 +57,8 @@ build/head.html    the entire stylesheet
 ## Tests
 
 ```sh
-osascript -l JavaScript assert.js   # 488 behaviour assertions      → expect 0 FAIL
-osascript -l JavaScript modals.js   # 50 assertions for modal UI    → expect 0 FAIL
+osascript -l JavaScript assert.js   # 786 behaviour assertions      → expect 0 FAIL
+osascript -l JavaScript modals.js   # 67 assertions for modal UI    → expect 0 FAIL
 osascript -l JavaScript smoke.js    # renders 994 screen states     → expect 0 failures
 ```
 

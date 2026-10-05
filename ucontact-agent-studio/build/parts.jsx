@@ -1,3 +1,37 @@
+/* The prerequisites page the "Learn more" links point at. Everything it states is something
+   this prototype already enforces or says elsewhere — no invented platform detail, and no
+   outbound link, since there is no real documentation URL to send anyone to. Self-contained
+   (it owns its own open state) so no screen using it gains a useState. */
+const PREREQS = [
+  {t:'A dialer to run in', ico:'board',
+   d:'An agent runs inside a dialer. It is live only while it is in one, and the agent page says which dialers are running it. Dialers are assigned in the Outbound Hub, not here.'},
+  {t:'A list of people to call', ico:'users',
+   d:'An outbound agent calls the contacts in its dialer\u2019s list. Testing never touches that list \u2014 a test call rings your own number and nobody else\u2019s.'},
+  {t:'Dispositions on the campaign', ico:'form',
+   d:'How an interaction is coded when it ends is configured on the campaign, outside the agent. The agent reports what happened; it does not define the codes.'},
+  {t:'Credits on the account', ico:'bolt',
+   d:'Every interaction an agent handles spends credits, and each one reports its own total. What is left is shown on the AI Agents screen.'},
+];
+function PrereqLink({label, className}){
+  const [open, setOpen] = useState(false);
+  return <>
+    <a className={className||'learnmore'} href="#"
+      onClick={e=>{ e.preventDefault(); setOpen(true); }}>{label}</a>
+    {open && <Modal title="AI agent collection prerequisites" onClose={()=>setOpen(false)}
+      actions={<button className="btn btn-gho" onClick={()=>setOpen(false)}>Close</button>}>
+      <p style={{marginTop:0}}>Four things have to be in place before an agent can take or make
+        interactions. Three of them are set up outside this screen.</p>
+      <div className="prereqs">
+        {PREREQS.map(x=>
+          <div className="prereq" key={x.t}>
+            <span className="prereq-ico">{I[x.ico]}</span>
+            <div><div className="prereq-t">{x.t}</div><div className="prereq-d">{x.d}</div></div>
+          </div>)}
+      </div>
+    </Modal>}
+  </>;
+}
+
 /* ============================ collapsible section ============================ */
 function Section({title, hint, summary, defaultOpen, children}){
   const [open, setOpen] = useState(defaultOpen===true);
@@ -55,8 +89,7 @@ function TemplateGallery({draft, set, talk}){
     <div className="note" style={{marginTop:18}}>{I.info}
       <span>Nothing here is locked in. Every rule a template brings can be changed in step 4.</span></div>
     <div style={{marginTop:12}}>
-      <a className="learnmore" href="#" onClick={e=>e.preventDefault()}>
-        Learn more: AI agent collection prerequisites — list, dialer and disposition requirements</a>
+      <PrereqLink label="Learn more: AI agent collection prerequisites — list, dialer and disposition requirements"/>
     </div>
   </>;
 }
@@ -133,24 +166,75 @@ function HandoverRules({draft, set}){
   </>;
 }
 
-function NeverPromises({draft, set}){
+function OtherRules({draft, set}){
   const [np, setNp] = useState('');
-  const add = () => { const t = np.trim(); if(t) set({promises:[...draft.promises, {t, on:true}]}); setNp(''); };
+  const list = draft.promises || [];
+  const ready = !!np.trim();
+  /* the template's rules are ticked by default and can be unticked rather than deleted, so a
+     supervisor can see what the template offered and put it back */
+  const toggle = i => set({promises:list.map((p,j)=>j===i?{...p, on:p.on===false}:p)});
+  const add = () => { if(!ready) return;
+    set({promises:[...list, {t:np.trim(), on:true, custom:true, kind:'rule'}]}); setNp(''); };
   return <>
-    {draft.promises.map((p,i)=>
-      <div className="prom" key={i} style={{marginTop:i?8:0}}>
-        <span className="no-ico">{I.x}</span>
-        <span style={{fontSize:14}}>{p.t}</span>
-        <button className="prom-x" aria-label="Remove rule"
-          onClick={()=>set({promises:draft.promises.filter((_,j)=>j!==i)})}>{I.x}</button>
-      </div>)}
-    <div className="prom" style={{marginTop:8, background:'var(--panel-2)'}}>
-      <span className="no-ico" style={{background:'var(--accent-soft)', color:'var(--accent)'}}>{I.plus}</span>
-      <input className="inp" style={{border:0, padding:'2px 0', background:'none'}} value={np}
-        placeholder="Add another promise it must never make…" onChange={e=>setNp(e.target.value)}
-        onKeyDown={e=>e.key==='Enter'&&add()}/>
-      {np.trim() && <button className="btn btn-gho btn-sm" onClick={add}>Add</button>}
+    {reducedOn(draft) && <div className="note" style={{marginBottom:8}}>{I.info}<span>Two rules are off while the brief offers a reduced balance without interest: that offer removes interest, so the agent cannot also promise never to.</span></div>}
+    <div role="group" aria-label="Other rules">
+      {list.map((p,i)=>{
+        /* off, greyed and not clickable while a reduced balance is on offer; never rewritten,
+           so unticking that offer brings the rule back exactly as it was */
+        if(suspendedByOffer(draft, p)) return <div className="cf" key={i}>
+          <div className="opt opt-lock opt-off" aria-checked="false" aria-disabled="true"
+            title="Off while the brief offers a reduced balance without interest">
+            <span className="cbx"></span><span>{p.t}<span className="cf-q">Off while a reduced balance without interest is on offer</span></span>
+          </div>
+        </div>;
+        const on = p.on !== false;
+        return <div className="cf" key={i}>
+          <button className="opt" role="checkbox" aria-checked={on} onClick={()=>toggle(i)}>
+            <span className="cbx">{on && I.check}</span>
+            <span>{p.t}{p.param!==undefined && <span className="cf-q">“{p.param || '…'}”</span>}</span>
+          </button>
+          {p.custom && <button className="prom-x" aria-label={'Remove '+p.t}
+            onClick={()=>set({promises:list.filter((_,j)=>j!==i)})}>{I.x}</button>}
+          {/* a rule that carries a text of its own: the field sits under its tick box */}
+          {p.param!==undefined && on && <div className="addq addq-mini rule-param">
+            <label className="addq-f addq-wide"><span className="addq-l">The message it leaves</span>
+              <input className="inp" value={p.param} aria-label="Message for whoever answers"
+                placeholder="What it says to whoever picked up"
+                onChange={e=>set({promises:list.map((x,j)=>j===i?{...x, param:e.target.value}:x)})}/></label>
+          </div>}
+        </div>;})}
     </div>
+    <div className="addq">
+      <div className="addq-row">
+        <label className="addq-f addq-wide">
+          <span className="addq-l">A rule of your own</span>
+          <input className="inp" value={np} placeholder="End the call if the customer is driving"
+            onChange={e=>setNp(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); add(); } }}/>
+        </label>
+        <button className="btn btn-pri btn-sm" disabled={!ready} onClick={add}
+          title={ready ? 'Add this rule' : 'Type the rule first'}>Add</button>
+      </div>
+    </div>
+  </>;
+}
+
+/* The words the template bans are shown as standard options to tick, not as things you can only
+   delete; anything you type yourself sits below them and stays removable. */
+function BannedWords({draft, set}){
+  const defaults = bannedDefaults(draft), on = draft.banned || [];
+  const extras = on.filter(w => defaults.indexOf(w) < 0);
+  const toggle = w => set({banned: on.indexOf(w)>-1 ? on.filter(x=>x!==w) : [...on, w]});
+  return <>
+    <div role="group" aria-label="Standard words">
+      {defaults.map(w=>{ const isOn = on.indexOf(w)>-1;
+        return <button className="opt" role="checkbox" aria-checked={isOn} key={w} onClick={()=>toggle(w)}>
+          <span className="cbx">{isOn && I.check}</span><span>{w}</span>
+        </button>;})}
+    </div>
+    <div className="mono" style={{margin:'14px 0 8px'}}>Your own</div>
+    <TagInput tags={extras} placeholder="Add a word…"
+      onChange={next => set({banned:[...on.filter(w=>defaults.indexOf(w)>-1), ...next]})}/>
   </>;
 }
 
@@ -160,9 +244,11 @@ function CollectFields({draft, set}){
   const [q, setQ] = useState('');
   const toggle = id => set({collect: fields.map(f=>f.id===id?{...f, on:!f.on}:f)});
   const remove = id => set({collect: fields.filter(f=>f.id!==id)});
-  const add = () => { const l=label.trim(), qq=q.trim(); if(!l||!qq) return;
-    set({collect:[...fields, {id:'custom_'+Date.now().toString(36), label:l, question:qq, on:true, custom:true}]});
+  const ready = !!label.trim() && !!q.trim();
+  const add = () => { if(!ready) return;
+    set({collect:[...fields, {id:'custom_'+Date.now().toString(36), label:label.trim(), question:q.trim(), on:true, custom:true}]});
     setLabel(''); setQ(''); };
+  const onKey = e => { if(e.key==='Enter'){ e.preventDefault(); add(); } };
   return <>
     <div role="group" aria-label="What it asks every caller">
       {fields.map(f=>
@@ -174,15 +260,26 @@ function CollectFields({draft, set}){
           {f.custom && <button className="prom-x" aria-label={'Remove '+f.label} onClick={()=>remove(f.id)}>{I.x}</button>}
         </div>)}
     </div>
-    <div className="prom" style={{marginTop:12, background:'var(--panel-2)', flexWrap:'wrap'}}>
-      <span className="no-ico" style={{background:'var(--accent-soft)', color:'var(--accent)'}}>{I.plus}</span>
-      <span style={{fontSize:13, color:'var(--ink-3)', flex:'none'}}>Add custom question</span>
-      <input className="inp" style={{border:0, padding:'2px 0', background:'none', flex:'1 1 140px'}} value={label}
-        placeholder="Label, e.g. Order number" onChange={e=>setLabel(e.target.value)}/>
-      <input className="inp" style={{border:0, padding:'2px 0', background:'none', flex:'2 1 220px'}} value={q}
-        placeholder="Spoken question, e.g. Do you have your order number handy?" onChange={e=>setQ(e.target.value)}
-        onKeyDown={e=>e.key==='Enter'&&add()}/>
-      {label.trim() && q.trim() && <button className="btn btn-gho btn-sm" onClick={add}>Add</button>}
+    {/* Add is always present and simply disabled until both halves are filled — it used to
+        appear only once they were, which read as the form refusing to save. */}
+    <div className="addq">
+      <div className="addq-t">Add a question of your own</div>
+      <div className="addq-row">
+        <label className="addq-f">
+          <span className="addq-l">What you call it</span>
+          <input className="inp" value={label} placeholder="Order number"
+            onChange={e=>setLabel(e.target.value)} onKeyDown={onKey}/>
+        </label>
+        <label className="addq-f addq-wide">
+          <span className="addq-l">What it asks out loud</span>
+          <input className="inp" value={q} placeholder="Do you have your order number handy?"
+            onChange={e=>setQ(e.target.value)} onKeyDown={onKey}/>
+        </label>
+        <button className="btn btn-pri btn-sm" disabled={!ready} onClick={add}
+          title={ready ? 'Add this question' : 'Fill both boxes to add it'}>{I.plus}Add</button>
+      </div>
+      <div className="note" style={{marginTop:10}}>{I.info}<span>Asked of every caller, after the
+        ones ticked above. You can switch it off or remove it later.</span></div>
     </div>
   </>;
 }
@@ -191,7 +288,6 @@ function StepRules({draft, set, next, back}){
   const isRec = draft.template==='reception';
   const asked = (draft.collect||[]).filter(f=>f.on).length;
   const hv = draft.handover || [], other = draft.handoverOther || [];
-  const hand = val(HANDOFF, draft.tokens.handoff);
   const chosen = hv.length + other.length + 1;               // +1 for the always-on trigger
   const n = (k, one, many) => k+(k===1?' '+one:' '+many);
   return <>
@@ -205,21 +301,21 @@ function StepRules({draft, set, next, back}){
       </Section>}
 
       <Section title="Handover rules" summary={n(chosen,'rule','rules')}
-        hint={'When any of these happens the agent stops, says a person will take over, and hands the call across. It hands over by: '+hand.v+' — change that on the brief.'}>
+        hint={'When any of these happens the agent stops, says a person will take over, and hands the call across. It hands over by: '+handLabel(draft)+' — change that on the brief.'}>
         <HandoverRules draft={draft} set={set}/>
       </Section>
 
       <Section title="Words it must never use" summary={n(draft.banned.length,'word','words')}
-        hint="If a word here would come up, the agent rephrases. Type a word and press Enter.">
-        <TagInput tags={draft.banned} onChange={b=>set({banned:b})} placeholder="Add a word…"/>
+        hint="Tick the ones that apply. If a word here would come up, the agent rephrases.">
+        <BannedWords draft={draft} set={set}/>
       </Section>
 
-      <Section title="Promises it must never make" summary={n(draft.promises.length,'promise','promises')}
-        hint="The agent will say it cannot promise that, then offer what it can do instead.">
-        <NeverPromises draft={draft} set={set}/>
+      <Section title="Other rules" summary={n(activePromises(draft).length,'rule','rules')}
+        hint="Tick the ones that apply. A never-promise rule makes the agent say it cannot promise that, then offer what it can do instead; the others change what it does on the call.">
+        <OtherRules draft={draft} set={set}/>
       </Section>
     </div></div>
-    <Foot onBack={back} onNext={next} nextOk/>
+    <Foot onBack={back} onNext={next} nextLabel="Save & open the agent" nextOk/>
   </>;
 }
 
@@ -229,8 +325,29 @@ function StepVoice({draft, set, next, back}){
   useEffect(()=>{ if(!playing) return; const t = setTimeout(()=>setPlaying(null), 2600); return ()=>clearTimeout(t); },[playing]);
   const lang = draft.lang || (draft.personaId ? persona(draft.personaId).lang : null);
   const voices = lang ? voicesIn(lang) : [];
-  const pickLang = id => set({lang:id,
-    personaId:(draft.personaId && persona(draft.personaId).lang===id) ? draft.personaId : null});
+  /* The template seeds a Spanish opener a step before the language is chosen, so switching
+     language has to bring the opener with it — unless it has been edited, which is the one
+     thing we must not overwrite. */
+  const pickLang = id => {
+    const t = template(draft.template), inb = draft.direction==='in';
+    const wasDefault = draft.opener===(inb ? t.inOpener : t.opener)
+                    || draft.opener===(inb ? t.inOpenerEn : t.openerEn);
+    const next = id==='en' ? (inb ? (t.inOpenerEn||t.inOpener) : (t.openerEn||t.opener))
+                           : (inb ? t.inOpener : t.opener);
+    /* the banned list swaps on the same terms: only while it is still the template's own */
+    const wasStock = (draft.banned||[]).join('|')===bannedDefaults({...draft, lang:draft.lang}).join('|');
+    const nextBanned = bannedDefaults({...draft, lang:id});
+    /* and the message the third-party rule leaves, while it is still a stock default */
+    const co = (draft.tokens||{}).company;
+    const stockMsg = [thirdPartyMessageDefault('es', co), thirdPartyMessageDefault('en', co)];
+    const nextPromises = (draft.promises||[]).map(r => r.t===THIRD_PARTY_MESSAGE && stockMsg.indexOf(r.param)>-1
+      ? {...r, param: thirdPartyMessageDefault(id, co)} : r);
+    set({lang:id,
+      personaId:(draft.personaId && persona(draft.personaId).lang===id) ? draft.personaId : null,
+      ...(wasDefault ? {opener:next} : {}),
+      ...(wasStock ? {banned:nextBanned} : {}),
+      promises: nextPromises});
+  };
   const sel = draft.personaId ? persona(draft.personaId) : null;
   return <>
     <div className="wrap"><div className="col">
@@ -283,9 +400,6 @@ function StepVoice({draft, set, next, back}){
           </div>
         </div>}
 
-        {lang==='en' && <div className="note" style={{marginTop:16}}>{I.info}
-          <span>The brief and the test conversation below are written in Spanish in this prototype —
-            an English agent would speak English throughout.</span></div>}
       </div>}
     </div></div>
     <Foot onBack={back} onNext={next} nextOk={!!lang && !!draft.personaId}/>
@@ -297,17 +411,31 @@ const ICO_TRASH = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" st
   strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
   <path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>;
 
+/* What is left on the account, read from the n2p usage API. Deliberately not a sum of the
+   interactions log — that is one month of one screen, this is the balance. */
+function CreditsWidget(){
+  const pct = creditsPct();
+  return <div className={'credits'+(creditsLow()?' credits-low':'')}
+    title={'Remaining credits, from the '+CREDITS.source+' · renews '+CREDITS.renews}>
+    <div className="credits-top">
+      <span className="credits-n tnum">{fmtCredits(creditsLeft())}</span>
+      <span className="credits-of tnum">of {fmtCredits(CREDITS.included)}</span>
+    </div>
+    <div className="credits-bar"><i style={{width:pct+'%'}}/></div>
+    <div className="credits-sub mono">credits left · renews {CREDITS.renews}</div>
+  </div>;
+}
+
 function AgentList({agents, onCreate, onOpen}){
   const [q, setQ] = useState('');
   const shown = agents.filter(a => (a.name+a.tokens.company).toLowerCase().includes(q.toLowerCase()));
   return <div className="panel">
     <div className="panel-hd">
-      <div className="panel-eyebrow">Administrator</div>
       <div style={{display:'flex', alignItems:'center', gap:20, flexWrap:'wrap'}}>
         <h1 style={{margin:0}}>AI Agents</h1>
-        <button className="btn btn-pri" style={{marginLeft:'auto'}} onClick={onCreate}>{I.plus}Create agent</button>
+        <CreditsWidget/>
+        <button className="btn btn-pri" onClick={onCreate}>{I.plus}Create agent</button>
       </div>
-      <p className="sub">Agents that call out and answer for your campaigns. You describe the job in plain words — no scripts, no prompts.</p>
     </div>
     <div className="wrap">
       <div style={{maxWidth:420, marginBottom:22}}>
@@ -330,10 +458,13 @@ function AgentList({agents, onCreate, onOpen}){
               <span className="pill" style={{background:'var(--accent-soft)', color:'var(--accent-ink)'}}>
                 <span style={{display:'grid', placeItems:'center', width:13}}>{inb?I.phoneIn:I.phoneOut}</span>
                 {dirLabel(a.direction)}</span>
-              {everDeployed(a) && <DeployedBadge dialers={a.dialers}/>}
+              {/* which template it was built from — the rules and wording it started with */}
+              <span className="pill pill-tpl" title={'Built from the '+template(a.template).name+' template'}>
+                <span style={{display:'grid', placeItems:'center', width:13}}>{template(a.template).icon}</span>
+                {template(a.template).name}</span>
+              {isLive(a) && <LiveBadge dialers={a.dialers}/>}
             </div>
             <div className="ag-line">It {goalLabel(a)}.</div>
-            <div className="ag-meta" style={{fontSize:12}}>{a.note}</div>
           </div>;
         })}
       </div>
@@ -343,24 +474,51 @@ function AgentList({agents, onCreate, onOpen}){
 
 /* ============================ 9 · THE AGENT PAGE ============================ */
 const ruleCount = a => (a.handover||[]).length + (a.handoverOther||[]).length + 1
-  + (a.banned||[]).length + (a.promises||[]).length;
+  + (a.banned||[]).length + activePromises(a).length;
 
-/* What deploying this version would change, against whatever is live. One line per change,
+/* Add a question to what the receptionist collects, without leaving the chip. Mounted only
+   while the popover is open, so the two inputs always start empty. */
+function CollectAdd({fields, set}){
+  const [label, setLabel] = useState('');
+  const [q, setQ] = useState('');
+  const ready = !!label.trim() && !!q.trim();
+  const add = () => { if(!ready) return;
+    set({collect:[...fields, {id:'custom_'+Date.now().toString(36), label:label.trim(), question:q.trim(), on:true, custom:true}]});
+    setLabel(''); setQ(''); };
+  const onKey = e => { if(e.key==='Enter'){ e.preventDefault(); add(); } };
+  return <div className="addq addq-mini">
+    <div className="addq-row">
+      <label className="addq-f">
+        <span className="addq-l">Call it</span>
+        <input className="inp" value={label} placeholder="Order number"
+          onChange={e=>setLabel(e.target.value)} onKeyDown={onKey}/>
+      </label>
+      <label className="addq-f addq-wide">
+        <span className="addq-l">It asks</span>
+        <input className="inp" value={q} placeholder="Do you have your order number handy?"
+          onChange={e=>setQ(e.target.value)} onKeyDown={onKey}/>
+      </label>
+      <button className="btn btn-pri btn-sm" disabled={!ready} onClick={add}
+        title={ready ? 'Add this question' : 'Fill both boxes to add it'}>Add</button>
+    </div>
+  </div>;
+}
+
+/* What recovering this version would change, against the current one. One line per change,
    each marked gained / lost / changed, so the answer to "what is different?" is countable at a
    glance instead of being two full lists the reader has to compare themselves. */
 function VersionDiff({agent, version}){
   const d = versionDiff(agent, version);
   if(!d) return <div className="vd-box">
     <div className="vd-lead">Nothing to compare</div>
-    <div className="vd-sub">{version.id} is the newest version there is.</div></div>;
-  const live = isLiveVersion(agent, d.base);
-  const against = 'against ' + d.base.id + (live ? ', the version running now' : '');
+    <div className="vd-sub">{version.id} is the current version.</div></div>;
+  const against = 'against ' + d.base.id + ', the current version';
   if(!d.rows.length) return <div className="vd-box">
     <div className="vd-lead">Nothing would change</div>
-    <div className="vd-sub">{version.id} is identical to {d.base.id}{live?', the version running now':''}.</div></div>;
+    <div className="vd-sub">{version.id} is identical to {d.base.id}, the current version.</div></div>;
   const nch = d.rows.length;
   return <div className="vd-box">
-    <div className="vd-lead">Deploying {version.id} changes {nch===1?'one thing':nch+' things'}</div>
+    <div className="vd-lead">Recovering {version.id} changes {nch===1?'one thing':nch+' things'}</div>
     <div className="vd-sub">{against}</div>
     <div className="vd-rows">
       {d.rows.map((r,i)=>
@@ -384,33 +542,39 @@ function VersionDiff({agent, version}){
   </div>;
 }
 
-/* One live version, however many dialers run it. Several is worth saying on screen — the
-   names are long, so the badge counts them and the tooltip and action bar spell them out. */
-function DeployedBadge({dialers}){
+/* Live means attached to a dialer in the Outbound Hub — nothing more. One version runs in all of
+   them; several is worth saying on screen, so the badge counts them and the tooltip names them. */
+function LiveBadge({dialers}){
   const ds = dialers || [], n = ds.length;
-  return <span className="pill deployed"
-    title={n ? 'Deployed · one live version, running in '+andList(ds)
-             : 'Deployed · not assigned to a dialer yet'}>
-    <i/>Deployed{n>1 && <span className="pill-sub">in {n} dialers</span>}</span>;
+  return <span className="pill deployed" title={'Live · running in '+andList(ds)}>
+    <i/>Live{n>1 && <span className="pill-sub">in {n} dialers</span>}</span>;
 }
 
 function AgentSummary({agent}){
   const a = agent, p = persona(a.personaId), inb = a.direction==='in';
-  const hand = val(HANDOFF, a.tokens.handoff), ident = val(identityFor(a.template), a.tokens.identity);
+  const ident = val(identityFor(a.template), a.tokens.identity);
   const V = ({children}) => <b className="pv">{children}</b>;
   /* asking for a person is always a trigger, so it belongs in the sentence */
   const triggers = ['asks for a person']
     .concat((a.handover||[]).map(id=>(HANDOVER.find(o=>o.id===id)||{}).short).filter(Boolean));
   const own = a.handoverOther || [];
-  const promises = (a.promises||[]).map(x=>x.t.replace(/^Never promise /i,''));
+  const promises = promisesOf(a).map(x=>x.t.replace(/^Never promise /i,''));
+  const others = otherRules(a);
   return <div className="brief-prose">
     <p><V>{p.name}</V> {inb?'answers calls to ':(template(a.template).who
       ? 'calls '+template(a.template).who+' ' : 'calls ')}<V>{a.tokens.company}</V> in <V>{LANGS[p.lang].name}</V>.
-      {' '}It <V>{ident.v.replace(/^verifies/,'verifies')}</V>, then <V>{goalLabel(a)}</V>.</p>
-    <p>Every call opens with the fixed disclosure, then <span className="pq">“{a.opener}”</span></p>
-    <p>It <V>{hand.v}</V> when the customer {orList(triggers)}.
+      {/* a receptionist is never offered an identity setting on its brief, so the summary must
+          not claim one — it greets whoever rang in */}
+      {' '}It {a.template==='collections'
+        ? <><V>{ident.v}</V>, <V>{discloseFull(a)}</V>, <V>{offersLabel(a)}</V>, {fallbackPhrase(a)}. Once a date is agreed, it <V>{paymentLabel(a)}</V>.</>
+        : <>{a.template!=='reception' && <><V>{ident.v}</V>, then </>}<V>{goalLabel(a)}</V>.</>}</p>
+    <p>Every call opens with the fixed disclosure, then <span className="pq">“{a.opener}”</span>
+      {a.template==='collections' && closingOf(a) && <>{' '}It ends every call with <span className="pq">“{closingOf(a)}”</span></>}</p>
+    <p>It <V>{handLabel(a)}</V> when the customer {orList(triggers)}.
       {promises.length>0 && <> It never promises <V>{orList(promises)}</V>{a.banned.length?'':'.'}</>}
       {a.banned.length>0 && <>{promises.length?', and':' It'} never says <V>{orList(a.banned)}</V>.</>}</p>
+    {others.length>0 && <p>Other {others.length===1?'rule':'rules'} it follows:{' '}
+      {others.map((r,i)=><span key={i}><span className="pq">“{ruleText(r)}”</span>{i<others.length-1?', ':''}</span>)}</p>}
     {own.length>0 && <p>It also hands over on your own {own.length===1?'rule':'rules'}:{' '}
       {own.map((t,i)=><span key={i}><span className="pq">“{t}”</span>{i<own.length-1?', ':''}</span>)}</p>}
     {(a.extraRules||[]).length>0 && <p>Corrections you have applied: <V>{orList(a.extraRules)}</V>.</p>}
@@ -426,55 +590,19 @@ function SumRow({label, children, wide}){
 
 function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover, onDelete, toast}){
   const a = agent, p = persona(a.personaId);
-  const [askDeploy, setAskDeploy] = useState(false);
   const [askDel, setAskDel] = useState(false);
   const [history, setHistory] = useState(false);
   const [viewing, setViewing] = useState(null);      // a version being read read-only
-  const [saved, setSaved] = useState(false);
   const inb = a.direction==='in';
-  const latest = latestVersion(a);
-  /* Deploy publishes the newest version — but only for an agent a dialer is
-     actually using, and only when there is something new to publish. */
-  const dials = dialersOf(a);
-  const blocked = !isDeployedLive(a) ? 'nodialer'
-    : (!a.dirty && latest && latest.deployed) ? 'live' : null;
-  const patch = up => setAgents(agents.map(x=>x.id===a.id?{...x, ...up}:x));
+  /* There is no separate publish step: the newest version is the one the agent runs, and it is
+     live wherever the Outbound Hub has put it in a dialer. */
+  const cur = currentVersion(a);
+  const dials = dialersOf(a), live = isLive(a);
+  const vs = a.versions || [];
+  const replacedBy = v => { const i = vs.findIndex(x => x.id === v.id); return i > -1 && vs[i+1] ? vs[i+1].id : null; };
 
-  /* Save stores the working draft. It never touches what is live. */
-  const save = () => {
-    const vs = (a.versions||[]).slice();
-    if(a.dirty){                                     // a recovered version becomes a new draft
-      vs.push({id:nextVersionId(a), author:ME, when:nowStamp(), deployed:false,
-        changed:'Recovered '+a.dirty, cfg:configOf(a)});
-    }
-    patch({versions:vs, dirty:null});
-    setSaved(true); setTimeout(()=>setSaved(false), 1800);
-    toast('Saved as the working draft.');
-  };
-
-  /* Deploy publishes the draft as the live version. */
-  const deploy = () => {
-    const vs = (a.versions||[]).slice();
-    const when = nowStamp();
-    const fresh = a.dirty ? nextVersionId(a) : null;
-    // `when` is when the version was written; deployment gets its own stamp
-    if(a.dirty) vs.push({id:fresh, author:ME, when, deployed:true, deployedAt:when,
-      changed:'Recovered '+a.dirty, cfg:configOf(a)});   // deploying saves the change too
-    else if(vs.length) vs[vs.length-1] = {...vs[vs.length-1], deployed:true, deployedAt:when};
-    else vs.push({id:'v1', author:ME, when, deployed:true, deployedAt:when, changed:'First version',
-      cfg:configOf(a)});
-    patch({versions:vs, lastDeployed:{when, by:ME}, dirty:null});
-    setAskDeploy(false);
-    const saved = fresh ? 'Saved as '+fresh+' and deployed. ' : 'Deployed. ';
-    toast(saved + (dials.length
-      ? andList(dials)+(dials.length>1?' pick':' picks')+' it up on the next interaction.'
-      : 'This is now the live version.'));
-  };
-  /* Deploy is only reachable for an assigned agent, so it always confirms. */
-  const onDeployClick = () => setAskDeploy(true);
-
-  /* Recovering never publishes. It hands the version to the Scope screen for review;
-     Deploy stays a separate decision, taken afterwards from this page. */
+  /* Recovering loads the version onto the Scope screen for review; nothing changes until it is
+     saved from there. */
   const recover = v => { setViewing(null); setHistory(false); onRecover(a.id, v); };
 
   return <div className="panel">
@@ -487,15 +615,15 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
             <h1 style={{margin:0, fontSize:23}}>{a.name}</h1>
             <span className="pill" style={{background:'var(--accent-soft)', color:'var(--accent-ink)'}}>
               <span style={{display:'grid', placeItems:'center', width:13}}>{inb?I.phoneIn:I.phoneOut}</span>{dirLabel(a.direction)}</span>
-            {everDeployed(a) && <DeployedBadge dialers={a.dialers}/>}
-            {latest && <span className="vchip" title={latest.deployed?'This version is live':'Not deployed yet'}>
-              {latest.id}{a.dirty?' +':''}</span>}
+            {live && <LiveBadge dialers={a.dialers}/>}
+            {cur && <span className="vchip" title="The current version">{cur.id}</span>}
           </div>
           <div className="ag-meta">{p.name} · {LANGS[p.lang].name} · {p.tier}</div></div>
         <div style={{marginLeft:'auto', display:'flex', gap:9, alignItems:'center', flexWrap:'wrap'}}>
           <button className="btn btn-gho btn-sm" onClick={()=>onTest(a.id)}>{I.chat}Test</button>
           <button className="btn btn-gho btn-sm" onClick={()=>setHistory(true)}>{I.clock}History</button>
           <button className="btn btn-gho btn-sm" onClick={()=>onEdit(a.id)}>{I.pencil}Edit</button>
+          <PrereqLink label="Prerequisites" className="learnmore prereq-inline"/>
         </div>
       </div>
     </div>
@@ -503,7 +631,7 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
       <div style={{maxWidth:1120, margin:'0 auto'}}>
         <p className="brief" style={{fontSize:20, marginTop:0}}>
           It {inb?'answers calls to':'calls '+template(a.template).who} <b style={{fontWeight:500}}>{a.tokens.company}</b> and {goalLabel(a)}.
-          {' '}Asks for a person → {val(HANDOFF, a.tokens.handoff).v}.
+          {' '}Asks for a person → {handLabel(a)}.
         </p>
 
         <div style={{marginTop:26}}>
@@ -512,46 +640,25 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
           </Section>
         </div>
 
-        {a.dirty && <div className="note" style={{marginTop:18}}>{I.pencil}
-          <span><b>{a.dirty} recovered</b> — what you see above is that version's configuration, not live yet.
-            Save it to keep it as the working draft, or Deploy to save and publish it in one step.</span></div>}
-        {blocked==='nodialer' && <div className="note" style={{marginTop:18}}>{I.info}
-          <span>This agent is not in a dialer yet, so there is nothing to deploy to. Add it to a dialer in the
-            Outbound Hub, then deploy from here.</span></div>}
-        {blocked==='live' && <div className="note" style={{marginTop:18}}>{I.check}
-          <span>{latest.id} is the latest version and it is already deployed. Edit the agent to start a new draft.</span></div>}
+        {!live && <div className="note" style={{marginTop:18}}>{I.info}
+          <span>This agent is not in a dialer, so it is not live. Add it to a dialer in the Outbound Hub to
+            put it live — it will run {cur ? cur.id : 'its current version'}.</span></div>}
 
         <div className="actionbar">
           <div className="ab-facts">
             <span className="ab-lead">
-              {latest
-                ? <>Latest <b>{latest.id}</b> · {a.dirty ? 'unsaved changes' : latest.deployed ? 'deployed' : 'draft'}</>
-                : <>No versions yet</>}</span>
+              {cur ? <>Current <b>{cur.id}</b> · {live ? 'live' : 'not live'}</> : <>No versions yet</>}</span>
             <span className="mono">
-              {a.lastDeployed
-                ? <>Last deployed {a.lastDeployed.when} by {a.lastDeployed.by}</>
-                : <>Last deployed: never</>}</span>
+              {cur ? <>Saved {cur.when} by {cur.author}</> : <>Not saved yet</>}</span>
+            <span className="mono">
+              {creditsRows(a.id)
+                ? <>Spent {fmtCredits(creditsBy(a.id))} credits over {creditsRows(a.id)} interactions</>
+                : <>No credits spent yet</>}</span>
             {/* which dialers run it is decided in the Outbound Hub; here it is a fact to read */}
             <span className="mono">
-              {dials.length
-                ? <>Live in {andList(dials)}</>
-                : <>Not in a dialer yet</>}</span>
-            <a className="learnmore" href="#" onClick={e=>e.preventDefault()}>Learn more: AI agent collection prerequisites</a>
+              {live ? <>Live in {andList(dials)}</> : <>Not in a dialer</>}</span>
+            <PrereqLink label="Learn more: AI agent collection prerequisites"/>
           </div>
-          <div className="ab-acts">
-            <button className="btn btn-gho" onClick={save}>
-              {saved?I.check:null}{saved?'Saved':'Save'}</button>
-            <button className="btn btn-pri" onClick={onDeployClick} disabled={!!blocked}
-              title={blocked==='nodialer' ? 'Not in a dialer yet — assign it in the Outbound Hub first'
-                : blocked==='live' ? latest.id+' is already deployed — nothing new to publish'
-                : a.dirty ? 'Save the change and publish it, in one step'
-                : 'Publish '+(latest?latest.id:'this agent')+' as the live version'}>
-              {I.arrowUp}Deploy</button>
-          </div>
-          {blocked && <div className="ab-why mono">
-            {blocked==='nodialer'
-              ? <>Assign this agent to a dialer in the Outbound Hub to deploy it</>
-              : <>{latest.id} is already deployed — nothing new to publish</>}</div>}
           <div className="ab-danger">
             <button className="btn btn-dan btn-sm" onClick={()=>setAskDel(true)}>{ICO_TRASH}Delete agent</button>
           </div>
@@ -559,34 +666,17 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
       </div>
     </div>
 
-    {askDeploy && <Modal title="Deploy this agent?" onClose={()=>setAskDeploy(false)}
-      actions={<><button className="btn btn-gho" onClick={()=>setAskDeploy(false)}>Cancel</button>
-        <button className="btn btn-pri" onClick={deploy}>Deploy</button></>}>
-      <p style={{marginTop:0}}>This agent is assigned to{' '}
-        {dials.map((dl,i)=><span key={dl}>{i?(i===dials.length-1?' and ':', '):''}<b>{dl}</b></span>)}.
-        {' '}Changes apply to the next interaction.</p>
-      {deployedVersion(a) && <p style={{marginTop:10}}>It replaces{' '}
-        <b>{deployedVersion(a).id}</b>, the version the {dials.length>1?'dialers are':'dialer is'} using now.</p>}
-      {dials.length>1 && <div className="note" style={{marginTop:12}}>{I.info}
-        <span>An agent runs one live version everywhere it is assigned, so all {dials.length} dialers
-          switch together. To move one of them separately it needs its own agent.</span></div>}
-      {a.dirty && <p style={{marginTop:10}}>The configuration you recovered from <b>{a.dirty}</b> is saved as{' '}
-        <b>{nextVersionId(a)}</b> and published in the same step.</p>}
-    </Modal>}
-
     {history && !viewing && <Modal title="Version history" onClose={()=>setHistory(false)}
       actions={<button className="btn btn-gho" onClick={()=>setHistory(false)}>Close</button>}>
       <div className="vlist">
-        {(a.versions||[]).slice().reverse().map(v=>
+        {vs.slice().reverse().map(v=>
           <button className="vrowh" key={v.id} onClick={()=>setViewing(v)}>
             <span className="vid">{v.id}</span>
             <span className="vmeta"><b>{v.changed}</b><span>{v.author} · {v.when}</span></span>
-            {/* one version is live; the earlier published ones are history, not a second live copy */}
-            {isLiveVersion(a,v) && <span className="vdep mono"
-              title={v.deployedAt?'Deployed '+v.deployedAt:'Deployed'}>Deployed</span>}
-            {wasLiveVersion(a,v) && <span className="vwas mono"
-              title={'Was live'+(v.deployedAt?' from '+v.deployedAt:'')+', until '+deployedVersion(a).id+' replaced it'}>
-              Was live</span>}
+            {/* the newest version is the one it runs; Live only if a dialer is running it */}
+            {isCurrentVersion(a,v) && <span className="vdep mono"
+              title={live ? 'Live · running in '+andList(dials) : 'The current version · not in a dialer'}>
+              {live ? 'Live' : 'Current'}</span>}
             <span style={{color:'var(--ink-3)'}}>{I.fwd}</span>
           </button>)}
       </div>
@@ -594,11 +684,11 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
 
     {viewing && <Modal title={viewing.id+' · read-only'} onClose={()=>setViewing(null)}
       actions={<><button className="btn btn-gho" onClick={()=>setViewing(null)}>Back</button>
-        <button className="btn btn-pri" onClick={()=>recover(viewing)}>Recover this version</button></>}>
+        {!isCurrentVersion(a,viewing) &&
+          <button className="btn btn-pri" onClick={()=>recover(viewing)}>Recover this version</button>}</>}>
       <div className="mono" style={{marginBottom:8}}>{viewing.author} · {viewing.when}
-        {isLiveVersion(a,viewing) ? ' · deployed and live now'
-          : wasLiveVersion(a,viewing) ? ' · was live, replaced by '+deployedVersion(a).id
-          : ' · never deployed'}</div>
+        {isCurrentVersion(a,viewing) ? (live ? ' · current, live in '+andList(dials) : ' · current, not live')
+          : replacedBy(viewing) ? ' · replaced by '+replacedBy(viewing) : ''}</div>
       <p style={{marginTop:0}}>{viewing.changed}</p>
       <VersionDiff agent={a} version={viewing}/>
       <Section title={'How '+viewing.id+' was set up, in full'}
@@ -611,7 +701,7 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
       actions={<><button className="btn btn-gho" onClick={()=>setAskDel(false)}>Keep it</button>
         <button className="btn btn-dan" onClick={()=>onDelete(a.id)}>{ICO_TRASH}Delete agent</button></>}>
       <p style={{marginTop:0}}>Its brief, its rules and its interaction history go with it. This cannot be undone.
-        {isDeployedLive(a) && <> <b>It is live in {andList(dials)}</b> — deleting it stops those calls.</>}</p>
+        {live && <> <b>It is live in {andList(dials)}</b> — deleting it stops those calls.</>}</p>
     </Modal>}
   </div>;
 }
@@ -674,7 +764,7 @@ function Interactions({agents, onOpenRow}){
         <table className="itab">
           <thead><tr>
             <th>Start time</th><th>End time</th><th>Channel</th><th>Client</th><th>Source</th>
-            <th>Campaign</th><th>Handled by</th><th>Disposition</th><th className="ta-r">Duration</th>
+            <th>Campaign</th><th>Handled by</th><th>Disposition</th><th>Promise</th><th className="ta-r">Credits</th><th className="ta-r">Duration</th>
           </tr></thead>
           <tbody>
             {rows.map(r=>{
@@ -699,6 +789,13 @@ function Interactions({agents, onOpenRow}){
                     </span>
                   : <span className="itab-by"><span className="itab-hum">{I.user}</span>{r.user}</span>}</td>
                 <td style={{color:r.disp?'var(--ink)':'var(--ink-3)'}}>{r.disp||'—'}</td>
+                {/* the promise a collections agent recorded: offer, amount, date */}
+                <td className="itab-prom" style={{color:r.promise?'var(--ink)':'var(--ink-3)'}}>{r.promise
+                  ? <span><b>{r.promise.offer==='intent' ? 'intent' : r.promise.offer}</b><span className="tnum">{r.promise.amount} · {r.promise.date}</span></span>
+                  : '—'}</td>
+                <td className="tnum ta-r" style={{color:v?'var(--ink)':'var(--ink-3)'}}
+                  title={v?'Reported by the agent for this interaction':'Handled by a person — no credits'}>
+                  {v ? fmtCredits(creditsOf(r)) : '—'}</td>
                 <td className="tnum ta-r">{r.dur}</td>
               </tr>;
             })}
@@ -760,6 +857,8 @@ function ConversationSummary({row, agents}){
     <SumField title="Main reason of the conversation" text={sum.reason}/>
     <SumField title="Key points discussed" text={sum.key}/>
     <SumField title="Resolution" text={sum.resolution}/>
+    {row.promise && <div className="sf"><div className="sf-hd"><span className="sf-t">Recorded promise</span></div>
+      <PromiseCard p={row.promise} title="What the agent recorded when it reached a date"/></div>}
   </div>;
 }
 
@@ -806,6 +905,10 @@ function InteractionDetail({row, agents, onBack, onTeach, initialTab}){
       <span className={'pill '+(row.campaign==='Test'?'pill-reh':'pill-acc')}>{row.campaign}</span>
       <span className="ixd-who">{ICO_LINK}{row.medium==='email' ? 'Subject: '+thread[0].subject : row.source||row.client}</span>
       {v && <span className="pill pill-acc"><i/>{v.name} · AI agent</span>}
+      {v && <span className="pill credit-pill tnum"
+        title="Credits this interaction reported, from the webhook">{fmtCredits(creditsOf(row))} credits</span>}
+      {row.promise && <span className="pill pill-live" title={'Promise recorded: '+row.promise.offer+' · '+row.promise.amount+' · '+row.promise.date}>
+        <i/>Promise · {row.promise.amount} · {row.promise.date}</span>}
       <span style={{marginLeft:'auto', display:'flex', gap:9}}>
         {v && ag && <button className="btn btn-gho btn-sm" onClick={()=>onTeach(ag.id, row.call)}>{I.wand}Teach it</button>}
         <button className={'btn-uc'+(rail==='comments'?' on':'')}
@@ -936,38 +1039,62 @@ function StepBriefReception({draft, set, next, back}){
   const t = template(draft.template), p = persona(draft.personaId);
   const tk = draft.tokens;
   const goals = goalsFor(draft.template);
-  const goal = val(goals, tk.goal), hand = val(HANDOFF, tk.handoff);
+  const goal = val(goals, tk.goal);
   const fields = draft.collect || [], k = draft.knowledge || {about:'', urls:[]};
   const asked = fields.filter(f=>f.on);
   const setTok = (kk,v) => set({tokens:{...tk, [kk]:v}});
   const tog = kk => () => setOpen(open===kk?null:kk);
   const toggleField = id => set({collect: fields.map(f=>f.id===id?{...f, on:!f.on}:f)});
+  /* several jobs at once; the list keeps the canonical order, and tokens.goal tracks its first
+     so every screen that quotes a single goal keeps working */
+  const gIds = goalIds(draft);
+  const toggleGoal = id => {
+    const next = goals.map(g=>g.id).filter(x => x===id ? gIds.indexOf(id)<0 : gIds.indexOf(x)>-1);
+    if(!next.length) return;                         // it must still do something
+    set({tokens:{...tk, goals:next, goal:next[0]}});
+  };
   const disclosure = disclosureFor(draft);
-  /* a receptionist never transfers live, so only the message hand-off is offered */
-  const handoffs = HANDOFF.filter(o=>o.id==='msg');
+  /* putting callers through is much of a receptionist's job, so every hand-off is offered —
+     taking a message is simply the one it starts on */
+  const handoffs = handoffFor(draft.template);
   return <>
     <div className="wrap wz-wide"><div className="brief-2col">
       <div>
-        <StepHead title="This is your agent"/>
+        <StepHead title="What it will do on every call"
+          sub="Written out in full. Anything underlined is yours to change — tap it."/>
         <p className="brief">
-          This agent answers calls to <Chip label={tk.company} hint="The name the agent says out loud." isOpen={open==='company'} onOpen={tog('company')}>
+          It answers calls to <Chip label={tk.company} hint="The name the agent says out loud." isOpen={open==='company'} onOpen={tog('company')}>
             <input className="inp" autoFocus value={tk.company} onChange={e=>setTok('company', e.target.value)}/>
             <div className="note" style={{marginTop:9}}>{I.info}<span>Used in the greeting and the disclosure.</span></div>
           </Chip>.
           {' '}It greets callers, <Chip label={collectLabel(fields)} hint="What it asks every caller, in this order." isOpen={open==='collect'} onOpen={tog('collect')}>
             <div role="group" aria-label="Fields it collects">{fields.map(f=>
-              <button className="opt" role="checkbox" aria-checked={f.on} key={f.id} onClick={()=>toggleField(f.id)}>
-                <span className="cbx">{f.on && I.check}</span><span>{f.label}</span>
-              </button>)}</div>
-            <div className="note" style={{marginTop:10}}>{I.info}<span>Custom questions are added on the rules step.</span></div>
-          </Chip>, <Chip label={goal.v} hint="The one thing the call is for." isOpen={open==='goal'} onOpen={tog('goal')}>
-            <div role="radiogroup">{goals.map(o=>
-              <Option key={o.id} on={o.id===tk.goal} onClick={()=>{setTok('goal', o.id); setOpen(null);}}>{o.v}</Option>)}</div>
-          </Chip>, and when it can’t help it <Chip label={hand.v} align="right"
-            hint="A receptionist never transfers a live call." isOpen={open==='handoff'} onOpen={tog('handoff')}>
+              <div className="cf" key={f.id}>
+                <button className="opt" role="checkbox" aria-checked={f.on} onClick={()=>toggleField(f.id)}>
+                  <span className="cbx">{f.on && I.check}</span><span>{f.label}</span>
+                </button>
+                {f.custom && <button className="prom-x" aria-label={'Remove '+f.label}
+                  onClick={()=>set({collect: fields.filter(x=>x.id!==f.id)})}>{I.x}</button>}
+              </div>)}</div>
+            <CollectAdd fields={fields} set={set}/>
+            <div className="note" style={{marginTop:10}}>{I.info}<span>Anything you add here is asked of every caller, and shows on the rules step with its wording.</span></div>
+          </Chip>, <Chip label={goalLabel(draft)} hint="What the call is for. A receptionist can do more than one." isOpen={open==='goal'} onOpen={tog('goal')}>
+            <div role="group" aria-label="What the call is for">{goals.map(o=>{
+              const on = gIds.indexOf(o.id)>-1;
+              return <button className="opt" role="checkbox" aria-checked={on} key={o.id} onClick={()=>toggleGoal(o.id)}>
+                <span className="cbx">{on && I.check}</span><span>{o.v}</span>
+              </button>;})}</div>
+            <div className="note" style={{marginTop:10}}>{I.info}<span>Pick as many as it should handle. It always keeps at least one — {goals[0].v} is the fallback.</span></div>
+          </Chip>, and when it can’t help it <Chip label={handLabel(draft)} align="right"
+            hint="What it does when it cannot help, or the caller asks for a person."
+            isOpen={open==='handoff'} onOpen={tog('handoff')}>
             <div role="radiogroup">{handoffs.map(o=>
-              <Option key={o.id} on={o.id===tk.handoff} onClick={()=>{setTok('handoff', o.id); setOpen(null);}}>{o.v}</Option>)}</div>
-            <div className="note" style={{marginTop:10}}>{I.lock}<span>Live transfer is not offered for this template — the caller’s details reach your team as a summary.</span></div>
+              <Option key={o.id} on={o.id===tk.handoff} onClick={()=>{setTok('handoff', o.id); if(o.id!=='campaign') setOpen(null);}}>{o.v}</Option>)}</div>
+            {tk.handoff==='campaign' && <select className="inp" style={{marginTop:10}} value={campaignOf(draft)}
+              aria-label="Campaign" onChange={e=>setTok('campaign', e.target.value)}>
+              {CAMPAIGNS.map(c=><option key={c} value={c}>{c}</option>)}</select>}
+            <div className="note" style={{marginTop:10}}>{I.info}<span>Transfer puts the caller
+              through live, to the people working that campaign. Taking a message ends the call and sends your team what it collected.</span></div>
           </Chip>.
         </p>
         <p className="brief" style={{marginTop:22}}>
@@ -981,17 +1108,18 @@ function StepBriefReception({draft, set, next, back}){
           It <span className="chip-ro" title="Set below, under What it knows">{knowledgeLabel(k)}</span>.
         </p>
 
-        <div className="field" style={{borderTop:'1px solid var(--line-2)', marginTop:26}}>
-          <div className="field-t">What it knows</div>
-          <div className="field-h">Answers come only from here. Leave it empty and the agent takes a message instead of guessing.</div>
-          <div className="field-b">
+        <div style={{marginTop:26}}>
+          <Section title="What it knows" summary={knowledgeCount(k)}
+            hint="Answers come only from here. Leave it empty and the agent takes a message instead of guessing.">
             <div className="mono" style={{marginBottom:8}}>About the company</div>
             <textarea className="inp" value={k.about} placeholder="Opening hours, what you do, how to find you…"
               onChange={e=>set({knowledge:{...k, about:e.target.value}})}/>
             <div className="mono" style={{margin:'16px 0 8px'}}>Website pages it learns from</div>
             <div className="urls"><TagInput tags={k.urls} onChange={urls=>set({knowledge:{...k, urls}})}
               placeholder="Paste a page address and press Enter…"/></div>
-          </div>
+            <div className="mono" style={{margin:'16px 0 8px'}}>Files it learns from</div>
+            <KnowledgeFiles k={k} set={set}/>
+          </Section>
         </div>
       </div>
 
@@ -1014,4 +1142,109 @@ function StepBriefReception({draft, set, next, back}){
     </div></div>
     <Foot onBack={back} onNext={next} nextOk={!!tk.company.trim()} wide/>
   </>;
+}
+
+/* ============================ COLLECTIONS: BALANCE, OFFERS, CLOSING ============================ */
+/* A small field naming the contact-list column a value is read from. */
+function ListColumn({draft, set, k, label}){
+  const tk = draft.tokens, cols = {...LIST_COLS, ...(tk.cols||{})};
+  return <label className="listcol" onClick={e=>e.stopPropagation()}>
+    <span className="addq-l">{label || 'List column'}</span>
+    <input className="inp" value={cols[k]} aria-label={'List column for '+k} spellCheck={false}
+      onChange={e=>set({tokens:{...tk, cols:{...cols, [k]:e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')}}})}/>
+  </label>;
+}
+/* "It also mentions:" — siblings of the amount radio, applied whichever radio is chosen. */
+function MentionsPicker({draft, set}){
+  const tk = draft.tokens, m = mentionsOf(draft), unit = overdueUnit(draft);
+  const tog = id => set({tokens:{...tk, mentions:{...m, [id]:!m[id]}}});
+  return <div className="mentions">
+    <div className="pop-t" style={{marginTop:14}}>It also mentions:</div>
+    <div role="group" aria-label="It also mentions">
+      {MENTIONS.map(x => <div className="offer-row" key={x.id}>
+        <button className="opt" role="checkbox" aria-checked={m[x.id]} onClick={()=>tog(x.id)}>
+          <span className="cbx">{m[x.id] && I.check}</span><span>{x.v}</span>
+        </button>
+        {m[x.id] && <div className="offer-sub">
+          {x.id==='overdue' && <span className="unitpick" role="radiogroup" aria-label="Overdue in">
+            {['days','months'].map(u => <button key={u} role="radio" aria-checked={unit===u}
+              className={'step-pill'+(unit===u?' on':'')} onClick={()=>set({tokens:{...tk, overdueUnit:u}})}>{u}</button>)}
+          </span>}
+          <ListColumn draft={draft} set={set} k={x.id}/>
+        </div>}
+      </div>)}
+    </div>
+    <div className="note" style={{marginTop:8}}>{I.info}<span>Each value comes from the campaign’s contact list, from the column named here. In this preview {overdueN(draft)} {unit} and contract {contractOf(draft)} stand in for them.</span></div>
+  </div>;
+}
+/* What it can offer: ordered checkboxes. It offers them in this order and stops at the first yes. */
+function OffersPicker({draft, set}){
+  const tk = draft.tokens, list = offersOf(draft);
+  const write = next => set({tokens:{...tk, offers:next}});
+  const tog = i => write(list.map((x,j)=> j===i ? {...x, on:!x.on} : x));
+  const move = (i, d) => { const j = i + d; if(j<0 || j>=list.length) return;
+    const next = list.slice(); const t = next[i]; next[i] = next[j]; next[j] = t; write(next); };
+  const setParam = id => n => set({tokens:{...tk, params:{...(tk.params||{}), [id]:n}}});
+  let rank = 0;
+  return <div>
+    <div role="group" aria-label="What it can offer">
+      {list.map((x,i) => { const g = offerDef(x.id), gp = paramOf(x.id); if(x.on) rank++;
+        return <div className={'offer-row'+(x.on?' on':'')} key={x.id}>
+          <div className="offer-top">
+            <span className="offer-n mono">{x.on ? rank : ''}</span>
+            <button className="opt" role="checkbox" aria-checked={x.on} onClick={()=>tog(i)}>
+              <span className="cbx">{x.on && I.check}</span><span>{gp ? g.v+' N '+gp.unit : g.v}</span>
+            </button>
+            <span className="offer-mv">
+              <button className="btn btn-qui btn-sm" aria-label={'Move '+g.v+' up'} disabled={i===0} onClick={()=>move(i,-1)}>{I.arrowUp}</button>
+              <button className="btn btn-qui btn-sm" aria-label={'Move '+g.v+' down'} disabled={i===list.length-1} onClick={()=>move(i,1)}>{I.arrowDown}</button>
+            </span>
+          </div>
+          {x.on && (gp || x.id==='minimum' || x.id==='reduced') && <div className="offer-sub">
+            {gp && <ParamStepper gp={gp} pv={paramVal(draft, x.id)} setParam={setParam(x.id)} close={()=>{}}/>}
+            {(x.id==='minimum' || x.id==='reduced') && <ListColumn draft={draft} set={set} k={x.id}/>}
+          </div>}
+          {x.on && x.id==='partial' && <div className="offer-note">The agent works out {paramVal(draft,'partial')}% of the amount on the list — {offerAmount(draft,'partial')} here.</div>}
+          {x.on && x.id==='reduced' && <div className="offer-note">The agent never calculates a discount; it reads the figure from the list — {PLACEHOLDERS.reduced} here.</div>}
+        </div>; })}
+    </div>
+    <div className="opt-lock offer-fallback">{I.lock}<span>{FALLBACK_LINE}</span></div>
+  </div>;
+}
+function OffersChip({draft, set, open, tog}){
+  const isOpen = open==='offers';
+  return <span className="chip-wrap">
+    <button className={'chip'+(isOpen?' open':'')} onClick={tog('offers')} title={'Edit — '+offersLabel(draft)}>{offersLabel(draft)}</button>
+    {isOpen && <Popover onClose={tog('offers')} wide>
+      <div className="pop-t">What it can offer</div>
+      <div className="pop-h">Tick what it may offer and put them in order. It offers one at a time and stops at the first yes.</div>
+      <OffersPicker draft={draft} set={set}/>
+    </Popover>}
+  </span>;
+}
+/* Optional. Read word for word at the end of every call, like the disclosure at the start. */
+function ClosingChip({draft, set, open, tog}){
+  const tk = draft.tokens, c = closingOf(draft), isOpen = open==='closing';
+  return <span className="chip-wrap">
+    <button className={'chip'+(isOpen?' open':'')+(c?'':' chip-empty')} onClick={tog('closing')}
+      title={c ? 'Edit — closing line' : 'Add a closing line'}>{c ? '“'+c+'”' : 'no closing line — add one'}</button>
+    {isOpen && <Popover onClose={tog('closing')}>
+      <div className="pop-t">Closing line</div>
+      <div className="pop-h">Optional. Read word for word at the end of every call. Leave it empty for none.</div>
+      <textarea className="inp" autoFocus value={tk.closing||''} placeholder="Gracias por su tiempo. Banco Sol le desea un buen día."
+        aria-label="Closing line" onChange={e=>set({tokens:{...tk, closing:e.target.value}})}/>
+    </Popover>}
+  </span>;
+}
+/* The promise the agent records whenever it reaches a date. */
+function PromiseCard({p, title}){
+  if(!p) return null;
+  return <div className="promise">
+    <span className="mono">{title || 'Promise recorded'}</span>
+    <div className="promise-row">
+      <span><b>Offer</b>{p.offer==='intent' ? 'intent — the date the customer gave' : p.offer}</span>
+      <span><b>Amount</b>{p.amount}</span>
+      <span><b>Date</b>{p.date}</span>
+    </div>
+  </div>;
 }

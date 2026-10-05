@@ -15,7 +15,7 @@ if r.returncode: sys.exit(1)
 
 # 2. one script, one lexical scope: data -> base -> new components -> boot
 app = '\n'.join(open(d+'build/'+f,encoding='utf-8').read()
-                for f in ('data.js','base.js','parts.js','boot.js'))
+                for f in ('i18n.js','data.js','base.js','parts.js','boot.js'))
 open(d+'build/app.js','w',encoding='utf-8').write(app)
 
 # 3. refresh the test harnesses from the same app

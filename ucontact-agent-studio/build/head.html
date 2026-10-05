@@ -88,6 +88,9 @@ h1{font-size:26px;line-height:1.2;letter-spacing:-.025em;margin:14px 0 0;font-we
 .pill-dra{background:var(--grey-soft);color:var(--grey)}
 .pill-blk{background:var(--stop-soft);color:var(--stop)}
 .pill-acc{background:var(--accent-soft);color:var(--accent-ink)}
+/* which template an agent came from — quiet, so it does not compete with direction or Deployed */
+.pill-tpl{background:var(--grey-soft);color:var(--ink-2)}
+.pill-tpl svg{width:13px;height:13px}
 
 .ava{border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;flex:none;
   box-shadow:inset 0 -6px 14px rgba(0,0,0,.1)}
@@ -356,6 +359,52 @@ input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1
 .vsum{margin:14px 0 4px;padding:14px 16px;border:1px solid var(--line-2);border-radius:var(--r-m);
   background:var(--panel-2)}
 .vsum-hd{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+/* ---------- the prerequisites page ---------- */
+.prereqs{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.prereq{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel-2)}
+.prereq-ico{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;
+  background:var(--accent-soft);color:var(--accent-ink)}
+.prereq-t{font-weight:600;font-size:14.5px}
+.prereq-d{font-size:13px;color:var(--ink-2);line-height:1.5;margin-top:3px}
+.prereq-inline{font-size:12.5px}
+
+/* the fixed disclosure on its own line, so it reads as a quoted rule rather than running
+   into the opener as one sentence */
+.chip-fix-block{display:flex;margin:9px 0 11px;width:fit-content;max-width:100%}
+/* a mandatory line whose wording is still a choice: the lock stays, the chip opens */
+.chip-lockpick{display:inline-flex;align-items:center;gap:5px}
+.chip-wrap.chip-fix-block{position:relative}
+
+/* ---------- credits: the account balance, and what one interaction cost ---------- */
+.credits{margin-left:auto;min-width:172px;padding:9px 13px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel-2)}
+.credits-top{display:flex;align-items:baseline;gap:6px}
+.credits-n{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.credits-of{font-size:12px;color:var(--ink-3)}
+.credits-bar{height:5px;border-radius:3px;background:var(--line);margin:7px 0 6px;overflow:hidden}
+.credits-bar i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.credits-sub{font-size:9.5px}
+.credits-low .credits-n{color:var(--stop)}
+.credits-low .credits-bar i{background:var(--stop)}
+.credit-pill{background:var(--grey-soft);color:var(--ink-2)}
+.credit-pill i{display:none}
+
+/* ---------- adding a question of your own: real fields, and a button that never vanishes ---- */
+.addq{margin-top:14px;padding:15px 16px;border:1px dashed var(--accent-line);
+  border-radius:12px;background:var(--panel-2)}
+.addq-t{font-weight:600;font-size:14px;margin-bottom:12px}
+.addq-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.addq-f{display:flex;flex-direction:column;gap:5px;flex:1 1 150px;min-width:0}
+.addq-wide{flex:2 1 230px}
+.addq-l{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.addq-row .btn{flex:none}
+.addq-mini{margin-top:10px;padding:11px 12px}
+.addq-mini .inp{padding:7px 9px;font-size:13.5px}
+/* a rule's own text field, under its tick box */
+.rule-param{margin:2px 0 8px 36px;flex-basis:100%}
+.cf{flex-wrap:wrap}
+
 /* version-to-version differences: one line per change, marked gained / lost / changed */
 .vd-box{margin:14px 0 10px}
 .vd-lead{font-size:16px;font-weight:600;letter-spacing:-.012em;color:var(--ink)}
@@ -628,4 +677,39 @@ input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1
 .cf .opt b{color:var(--ink)}
 .cf-q{display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:13.5px;color:var(--ink-3);margin-top:2px}
 .cf .prom-x{margin-top:9px}
+/* interface language switch */
+.langsw{display:inline-flex;border:1px solid var(--line);border-radius:99px;padding:2px;background:var(--panel)}
+.langsw-b{padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--ink-3)}
+.langsw-b.on{background:var(--accent);color:#fff}
+/* ---------- collections: offers, balance mentions, promise ---------- */
+.pop.pop-wide{width:430px}
+.offer-row{border-radius:10px;padding:2px 0}
+.offer-row+.offer-row{border-top:1px dashed var(--line-2)}
+.offer-top{display:flex;align-items:center;gap:4px}
+.offer-top .opt{flex:1}
+.offer-n{width:14px;text-align:right;color:var(--accent-ink);flex:none}
+.offer-mv{display:flex;flex:none}
+.offer-mv .btn{padding:5px 6px}
+.offer-mv .btn:disabled{opacity:.3;cursor:default}
+.offer-sub{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:0 4px 8px 46px}
+.offer-sub .steps-row{flex:1 1 220px}
+.offer-note{font-size:12px;color:var(--ink-3);padding:0 6px 8px 46px;line-height:1.4}
+.offer-fallback{margin-top:8px;background:var(--grey-soft);font-size:12.5px}
+.offer-fallback svg{flex:none;margin-top:2px}
+.listcol{display:flex;flex-direction:column;gap:3px;width:150px}
+.listcol .inp{padding:6px 8px;font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+.unitpick{display:inline-flex;gap:4px}
+.unitpick .step-pill{flex:none;min-width:0;padding:6px 10px}
+.mentions .offer-sub{padding-left:36px}
+.chip-empty{background:transparent;box-shadow:inset 0 0 0 1px var(--accent-line);color:var(--ink-3);font-weight:500}
+.promise{margin-top:8px;padding:11px 13px;border:1px solid var(--ok-soft);background:var(--ok-soft);border-radius:12px;max-width:88%}
+.promise .mono{color:var(--ok)}
+.promise-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-size:13px;color:var(--ink)}
+.promise-row b{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.itab-prom span{display:flex;flex-direction:column;gap:1px}
+.itab-prom b{font-weight:600;font-size:12.5px}
+.itab-prom .tnum{font-size:12px;color:var(--ink-3)}
+.sumtab .promise{max-width:100%;margin-top:10px}
+.opt-off{opacity:.55;cursor:not-allowed;flex:1}
+.opt-off .cbx{border-color:var(--line);background:var(--grey-soft)}
 </style>

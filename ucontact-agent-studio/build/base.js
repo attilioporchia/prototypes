@@ -555,98 +555,125 @@ const GOALS = {
   leads: [{
     id: 'quote_wa',
     v: 'sends a quote by WhatsApp the same day',
-    say: 'Le envío la cotización por WhatsApp hoy mismo, ¿le parece?'
+    say: 'Le envío la cotización por WhatsApp hoy mismo, ¿le parece?',
+  sayEn: 'I can send the quote over on WhatsApp today — does that work for you?'
   }, {
     id: 'visit',
     v: 'books a visit with an advisor',
-    say: 'Le agendo una visita con un asesor, ¿mañana a las 10:00 le sirve?'
+    say: 'Le agendo una visita con un asesor, ¿mañana a las 10:00 le sirve?',
+  sayEn: 'I can book you a visit with an advisor. Would tomorrow at ten suit you?'
   }, {
     id: 'budget',
     v: 'asks the budget and passes it to sales',
-    say: '¿Qué presupuesto tiene en mente? Con eso le paso el caso a un asesor.'
+    say: '¿Qué presupuesto tiene en mente? Con eso le paso el caso a un asesor.',
+  sayEn: 'What budget did you have in mind? I will pass that to an advisor with your details.'
   }],
   appointments: [{
     id: 'confirm',
     v: 'confirms or moves the appointment',
-    say: '¿Le confirmo la cita del jueves a las 10:00, o prefiere otro horario?'
+    say: '¿Le confirmo la cita del jueves a las 10:00, o prefiere otro horario?',
+  sayEn: 'Shall I confirm Thursday at ten, or would another time suit you better?'
   }, {
     id: 'confirm_only',
     v: 'only confirms, never reschedules',
-    say: '¿Me confirma que asistirá el jueves a las 10:00?'
+    say: '¿Me confirma que asistirá el jueves a las 10:00?',
+  sayEn: 'Can you confirm you will be there on Thursday at ten?'
   }, {
     id: 'prep',
     v: 'confirms and explains what to bring',
-    say: 'Le confirmo el jueves 10:00. Traiga su documento y los exámenes previos.'
+    say: 'Le confirmo el jueves 10:00. Traiga su documento y los exámenes previos.',
+  sayEn: 'Thursday at ten, confirmed. Please bring your ID and any previous test results.'
   }],
   messages: [{
     id: 'callback',
     v: 'agrees a callback time and number',
-    say: '¿A qué número le devolvemos la llamada, y a qué hora le conviene?'
+    say: '¿A qué número le devolvemos la llamada, y a qué hora le conviene?',
+  sayEn: 'What number should we call you back on, and what time suits you?'
   }, {
     id: 'deliver',
     v: 'delivers the message and ends',
-    say: 'Le dejo el recado y con eso termino. Gracias por su tiempo.'
+    say: 'Le dejo el recado y con eso termino. Gracias por su tiempo.',
+  sayEn: 'I will leave that message for you, and that is everything. Thanks for your time.'
   }, {
     id: 'confirm_r',
     v: 'reads the message back to confirm',
-    say: 'Le repito el recado para confirmar que quedó bien anotado.'
+    say: 'Le repito el recado para confirmar que quedó bien anotado.',
+  sayEn: 'Let me read the message back so we know it is right.'
   }],
+  // Collections: what it can offer, in the order the supervisor sets. "When do you intend to pay"
+  // is no longer one of them — it is the fixed fallback (INTENT_ASK in data.js).
   collections: [{
     id: 'date5',
-    v: 'agrees a payment date within',
-    say: '¿Le parece si registramos el pago dentro de {n}?'
+    v: 'full payment within',
+    say: '¿Puede realizar el pago total dentro de {n}?',
+    sayEn: 'Could you pay the full balance within {n}?'
   }, {
     id: 'partial',
-    v: 'agrees a partial payment of at least',
-    say: 'Podemos registrar un abono parcial de al menos {n}. ¿Le parece?'
+    v: 'a partial payment of at least',
+    say: 'Podemos registrar un abono de al menos {n} del saldo, es decir {amt}. ¿Le parece?',
+    sayEn: 'We can take a part payment of at least {n} of the balance — that is {amt}. Would that work?'
   }, {
-    id: 'link',
-    v: 'sends the payment link and confirms receipt',
-    say: 'Le envío el link de pago por WhatsApp y le confirmo cuando se registre.'
+    id: 'minimum',
+    v: 'the minimum payment',
+    say: 'Puede realizar el pago mínimo de {min}. ¿Le sirve?',
+    sayEn: 'You can make the minimum payment of {min}. Would that work?'
+  }, {
+    id: 'twopart',
+    v: 'in two parts: first today, the rest within',
+    say: 'Podemos dividirlo en dos pagos: uno hoy y el resto dentro de {n}. ¿Le parece?',
+    sayEn: 'We can split it in two: one part today and the rest within {n}. Would that work?'
+  }, {
+    id: 'reduced',
+    v: 'a reduced balance without interest',
+    say: 'Podemos dejar el saldo en {red}, sin intereses. ¿Le parece?',
+    sayEn: 'We can settle the balance at {red}, without interest. Would that work?'
   }],
   reception: [{
     id: 'takemsg',
     v: 'collects the caller’s details and confirms them back',
+    // `short` is used only when several jobs are listed together, where the full phrases
+    // (which carry their own "and" and comma clauses) would run into each other
+    short: 'takes a message',
     say: 'Let me make sure I have that right — I’ll read it back to you before we finish.'
   }, {
     id: 'book',
     v: 'books an appointment from the connected calendar',
+    short: 'books appointments',
     say: 'I can book that for you now. Which day works best?'
   }, {
     id: 'answer',
     v: 'answers questions from the business profile, then takes a message',
+    short: 'answers questions from the business profile',
     say: 'Happy to help with that. Anything I can’t answer, I’ll pass on as a message.'
   }]
 };
 const IDENTITY = [{
   id: 'verify',
   v: 'verifies who it is speaking to',
-  say: '¿Hablo con la persona titular?'
+  say: '¿Hablo con la persona titular?',
+  sayEn: 'Am I speaking with the account holder?'
 }, {
   id: 'byname',
   v: 'asks for the person by name',
-  say: '¿Se encuentra la señora Herrera?'
+  say: '¿Se encuentra la señora Herrera?',
+  sayEn: 'Is Mrs Herrera available?'
 }, {
   id: 'none',
   v: 'speaks to whoever answers',
-  say: 'Le comento el motivo de la llamada.'
+  say: 'Le comento el motivo de la llamada.',
+  sayEn: 'Let me explain why I am calling.'
 }];
 const HANDOFF = [{
-  id: 'desk',
-  v: 'transfers to the front desk',
-  say: 'Con gusto, le paso con recepción ahora mismo.'
-}, {
-  id: 'sales',
-  v: 'transfers to a sales advisor',
-  say: 'Con gusto, le paso con un asesor comercial.'
-}, {
-  id: 'sup',
-  v: 'transfers to the on-call supervisor',
-  say: 'Le paso con el supervisor de turno, un momento.'
+  id: 'campaign',
+  v: 'transfers to a campaign',
+  say: 'Con gusto, le paso con el equipo de esa campaña ahora mismo.',
+  // sayEn is used by the one template that speaks English; the rest quote `say`
+  sayEn: 'Of course — let me put you through to the team on that campaign.'
 }, {
   id: 'msg',
   v: 'takes a message and ends the call',
-  say: 'Le tomo el recado y una persona le devuelve la llamada.'
+  say: 'Le tomo el recado y una persona le devuelve la llamada.',
+  sayEn: 'I’ll take a message and someone will call you back.'
 }];
 const TEMPLATES = [{
   id: 'leads',
@@ -658,12 +685,17 @@ const TEMPLATES = [{
   who: 'people who asked for a quote from',
   mid: 'asks what they need, and',
   goal: 'quote_wa',
-  handoff: 'sales',
+  handoff: 'campaign',
+  campaign: 'Sales_Engineers',
   opener: 'Le llamo por la cotización que solicitó.',
+  openerEn: 'I am calling about the quote you asked us for.',
   inOpener: '¿En qué producto está interesado?',
+  inOpenerEn: 'Which product are you interested in?',
   promises: ['Never promise a final price', 'Never promise a discount', 'Never promise same-day delivery'],
   banned: ['gratis', 'garantizado'],
-  custSay: 'Sí, pedí información por la página.'
+  bannedEn: ['free', 'guaranteed'],
+  custSay: 'Sí, pedí información por la página.',
+  custSayEn: 'Yes, I asked for information on your website.'
 }, {
   id: 'appointments',
   name: 'Appointments',
@@ -671,15 +703,20 @@ const TEMPLATES = [{
   blurb: 'Confirms, moves and reminds — for clinics, workshops and service visits.',
   stat: 'Used by 51 teams',
   company: 'Clínica Andes',
-  who: 'patients of',
+  who: 'customers of',
   mid: 'states the date and time, and',
   goal: 'confirm',
-  handoff: 'desk',
+  handoff: 'campaign',
+  campaign: 'Citas_Sept',
   opener: 'Le llamo para confirmar su cita del jueves a las 10:00.',
+  openerEn: 'I am calling to confirm your appointment on Thursday at ten.',
   inOpener: '¿Desea agendar, mover o confirmar una cita?',
+  inOpenerEn: 'Would you like to book, move or confirm an appointment?',
   promises: ['Never promise a specific doctor', 'Never promise a same-day slot', 'Never give clinical advice'],
   banned: ['diagnóstico', 'urgencia'],
-  custSay: 'Sí, con ella. ¿De qué se trata?'
+  bannedEn: ['diagnosis', 'emergency'],
+  custSay: 'Sí, con ella. ¿De qué se trata?',
+  custSayEn: 'Speaking. What is it about?'
 }, {
   id: 'messages',
   name: 'Messages & callbacks',
@@ -692,10 +729,14 @@ const TEMPLATES = [{
   goal: 'callback',
   handoff: 'msg',
   opener: 'Le devuelvo la llamada por el mensaje que nos dejó.',
+  openerEn: 'I am returning your call about the message you left us.',
   inOpener: '¿Desea dejar un mensaje o que le devolvamos la llamada?',
+  inOpenerEn: 'Would you like to leave a message, or have us call you back?',
   promises: ['Never promise an exact callback minute', 'Never promise a resolution'],
   banned: ['reclamo'],
-  custSay: 'Ah sí, llamé ayer y no me contestaron.'
+  bannedEn: ['complaint'],
+  custSay: 'Ah sí, llamé ayer y no me contestaron.',
+  custSayEn: 'Oh yes, I rang yesterday and nobody picked up.'
 }, {
   id: 'collections',
   name: 'Collections',
@@ -706,12 +747,17 @@ const TEMPLATES = [{
   who: 'people with overdue payments at',
   mid: 'explains the balance, and',
   goal: 'date5',
-  handoff: 'sup',
+  handoff: 'campaign',
+  campaign: 'Cobros_Ago',
   opener: 'Le llamo por su saldo pendiente.',
+  openerEn: 'I am calling about your outstanding balance.',
   inOpener: '¿Desea consultar su saldo o registrar un pago?',
+  inOpenerEn: 'Would you like to check your balance or make a payment?',
   promises: ['Never promise to remove interest', 'Never promise to stop legal action', 'Never promise a discount on the balance'],
   banned: ['abogado'],
-  custSay: 'Sí, soy yo. Ya sé del saldo pendiente.'
+  bannedEn: ['lawyer'],
+  custSay: 'Sí, soy yo. Ya sé del saldo pendiente.',
+  custSayEn: 'Yes, speaking. I know about the balance.'
 }, {
   id: 'reception',
   name: 'Receptionist',
@@ -732,6 +778,8 @@ const TEMPLATES = [{
 }];
 const template = id => TEMPLATES.find(t => t.id === id) || TEMPLATES[1];
 const DEFAULT_BANNED = ['urgente', 'demanda', 'embargo'];
+/* the same three, for an agent that speaks English */
+const DEFAULT_BANNED_EN = ['urgent', 'lawsuit', 'seizure'];
 function newDraft() {
   return {
     direction: null,
@@ -774,14 +822,35 @@ function seedFromTemplate(d, tid) {
       company: t.company,
       identity: 'verify',
       goal: t.goal,
-      handoff: t.handoff
+      // a receptionist can hold several jobs at once; goal stays the first of them
+      goals: multiGoal(tid) ? [t.goal] : undefined,
+      handoff: t.handoff,
+      campaign: t.campaign || CAMPAIGNS[0],
+      // collections only: what it says about the balance, and how the customer pays
+      ...(tid === 'collections' ? { disclose: 'amount', amount: AMOUNT_PLACEHOLDER, payment: 'channel', paymentPlace: '',
+        mentions: { overdue: false, contract: false }, overdueUnit: 'days', cols: { ...LIST_COLS },
+        offers: OFFER_IDS.map(id => ({ id, on: id === 'date5' })), closing: '' } : {})
     },
-    opener: inbound ? t.inOpener : t.opener,
-    banned: [...DEFAULT_BANNED, ...t.banned],
-    promises: t.promises.map(p => ({
-      t: p,
-      on: true
-    }))
+    opener: d.lang === 'en'
+      ? (inbound ? (t.inOpenerEn || t.inOpener) : (t.openerEn || t.opener))
+      : (inbound ? t.inOpener : t.opener),
+    banned: d.lang === 'en'
+      ? [...DEFAULT_BANNED_EN, ...(t.bannedEn || t.banned)]
+      : [...DEFAULT_BANNED, ...t.banned],
+    // whoever rang in is by definition the person on the line, so the wrong-recipient rule is
+    // seeded for outbound work only
+    promises: (inbound ? [] : [{ t: THIRD_PARTY_RULE, on: true, kind: 'rule' }])
+      // collections adds the two sibling rules: never the amount, and the message it leaves
+      .concat(!inbound && tid === 'collections' ? [
+        { t: THIRD_PARTY_NO_AMOUNT, on: true, kind: 'rule' },
+        { t: THIRD_PARTY_MESSAGE, on: true, kind: 'rule', param: thirdPartyMessageDefault(d.lang, t.company) }] : [])
+      // a template rule that does not begin "Never promise" was never a promise: the summary
+      // read "never promises ... or Never give clinical advice". It is an other-rule.
+      .concat(t.promises.map(p => ({
+        t: p,
+        on: true,
+        kind: /^never promise/i.test(p) ? 'promise' : 'rule'
+      })))
   };
 }
 
@@ -872,6 +941,8 @@ const proposalFor = (a, kind) => kind === 'transfer' ? {
   rule: 'Answer what it can answer before transferring'
 } : kind === 'confirmed' || kind === 'moved' ? {
   rule: 'Read the date back before ending the call'
+} : a.template === 'collections' ? {
+  rule: 'Offer another available slot before taking a message'
 } : {
   rule: 'Offer another available slot before taking a message',
   goal: goalsFor(a.template)[0]
@@ -883,14 +954,13 @@ const SEED_AGENTS_RAW = [{
   template: 'appointments',
   assignedToDialer: true,
   dialers: ['Citas_Septiembre'],
-  lastDeployed: { when: '22 Aug 2026, 16:40', by: 'carina.soca' },
   versions: [
     // `was` = what this version held that the agent no longer does; the newest needs none
-    { id: 'v1', author: 'attilio.porchia', when: '2 Aug 2026, 10:04',  deployed: true,  changed: 'First version',
+    { id: 'v1', author: 'attilio.porchia', when: '2 Aug 2026, 10:04',  changed: 'First version',
       was: { opener: 'Le llamo por su cita en Clínica Andes.', handoverOther: [] } },
-    { id: 'v2', author: 'attilio.porchia', when: '14 Aug 2026, 09:12', deployed: false, changed: 'Reworded the opener',
+    { id: 'v2', author: 'attilio.porchia', when: '14 Aug 2026, 09:12',changed: 'Reworded the opener',
       was: { handoverOther: [] } },
-    { id: 'v3', author: 'carina.soca',     when: '22 Aug 2026, 16:40', deployed: true,  changed: 'Added the medical-emergency handover rule' }
+    { id: 'v3', author: 'carina.soca',     when: '22 Aug 2026, 16:40', changed: 'Added the medical-emergency handover rule' }
   ],
   calls: 412,
   direction: 'out',
@@ -901,7 +971,8 @@ const SEED_AGENTS_RAW = [{
     company: 'Clínica Andes',
     identity: 'verify',
     goal: 'confirm',
-    handoff: 'desk'
+    handoff: 'campaign',
+    campaign: 'Citas_Sept'
   },
   opener: 'Le llamo para confirmar su cita del jueves a las 10:00.',
   banned: [...DEFAULT_BANNED, 'diagnóstico'],
@@ -912,7 +983,6 @@ const SEED_AGENTS_RAW = [{
     t: 'Never promise a same-day slot',
     on: true
   }],
-  note: '1.240 calls this month · 74% confirmed',
   extraRules: []
 }, {
   id: 'a2',
@@ -921,11 +991,10 @@ const SEED_AGENTS_RAW = [{
   template: 'leads',
   assignedToDialer: true,
   dialers: ['Cotizaciones_Q3', 'Leads_Web'],
-  lastDeployed: { when: '29 Aug 2026, 11:05', by: 'attilio.porchia' },
   versions: [
-    { id: 'v1', author: 'carina.soca',     when: '18 Aug 2026, 15:22', deployed: false, changed: 'First version',
+    { id: 'v1', author: 'carina.soca',     when: '18 Aug 2026, 15:22', changed: 'First version',
       was: { promises: [] } },
-    { id: 'v2', author: 'attilio.porchia', when: '29 Aug 2026, 11:05', deployed: true,  changed: 'Never-promise: final price' }
+    { id: 'v2', author: 'attilio.porchia', when: '29 Aug 2026, 11:05', changed: 'Never-promise: final price' }
   ],
   calls: 20,
   direction: 'out',
@@ -936,7 +1005,8 @@ const SEED_AGENTS_RAW = [{
     company: 'Seguros Vida Andina',
     identity: 'byname',
     goal: 'quote_wa',
-    handoff: 'sales'
+    handoff: 'campaign',
+    campaign: 'Sales_Engineers'
   },
   opener: 'Le llamo por la cotización que solicitó.',
   banned: [...DEFAULT_BANNED, 'gratis'],
@@ -944,37 +1014,50 @@ const SEED_AGENTS_RAW = [{
     t: 'Never promise a final price',
     on: true
   }],
-  note: '20 calls in its first week',
   extraRules: []
 }, {
+  // the worked example for the Receptionist template, and the one inbound agent in the set.
+  // It speaks English because that template's own wording is written in English.
   id: 'a3',
-  name: 'Recados Del Plata',
-  personaId: 'linda',
-  template: 'messages',
+  name: 'Recepción Del Plata',
+  personaId: 'gail',
+  template: 'reception',
+  lang: 'en',
   assignedToDialer: false,
   dialers: [],
-  lastDeployed: { when: '12 Aug 2026, 09:30', by: 'attilio.porchia' },
   versions: [
-    { id: 'v1', author: 'attilio.porchia', when: '12 Aug 2026, 09:30', deployed: true, changed: 'First version' }
+    { id: 'v1', author: 'attilio.porchia', when: '12 Aug 2026, 09:30',
+      changed: 'First version',
+      // it only took messages then; booking came later
+      was: { tokens: { company: 'Servicios Del Plata', identity: 'verify', goal: 'takemsg',
+        goals: ['takemsg'], handoff: 'msg' } } },
+    { id: 'v2', author: 'carina.soca', when: '3 Sep 2026, 11:40',
+      changed: 'Let it book appointments as well as take messages' }
   ],
   calls: 38,
-  direction: 'out',
+  direction: 'in',
   attempts: 4,
   from: 10,
   to: 20,
   tokens: {
     company: 'Servicios Del Plata',
     identity: 'verify',
-    goal: 'callback',
+    goal: 'takemsg',
+    goals: ['takemsg', 'book'],
     handoff: 'msg'
   },
-  opener: 'Le devuelvo la llamada por el mensaje que nos dejó.',
-  banned: DEFAULT_BANNED,
+  opener: 'Thank you for calling — how can I help you today?',
+  banned: [...DEFAULT_BANNED_EN, 'guaranteed', 'immediately'],
+  collect: COLLECT_DEFAULTS.map(f => ({ ...f })),
+  knowledge: { about: 'Servicios Del Plata handles maintenance contracts for commercial buildings. The office is open Monday to Friday, 9 to 6.', urls: ['servicios-del-plata.com/contact'] },
   promises: [{
-    t: 'Never promise a resolution',
+    t: 'Never promise a person will call back at an exact time',
     on: true
+  }, {
+    t: 'Never quote a price',
+    on: true,
+    kind: 'rule'
   }],
-  note: '38 calls',
   extraRules: []
 }, {
   id: 'a4',
@@ -983,9 +1066,8 @@ const SEED_AGENTS_RAW = [{
   template: 'leads',
   assignedToDialer: false,
   dialers: [],
-  lastDeployed: null,
   versions: [
-    { id: 'v1', author: 'attilio.porchia', when: '31 Aug 2026, 17:48', deployed: false, changed: 'First version' }
+    { id: 'v1', author: 'attilio.porchia', when: '31 Aug 2026, 17:48',changed: 'First version' }
   ],
   calls: 0,
   direction: 'out',
@@ -996,36 +1078,58 @@ const SEED_AGENTS_RAW = [{
     company: 'Multitienda Cuscatlán',
     identity: 'verify',
     goal: 'budget',
-    handoff: 'sales'
+    handoff: 'campaign',
+    campaign: 'Sales_Engineers'
   },
   opener: 'Le llamo para darle la bienvenida y explicarle su plan.',
   banned: DEFAULT_BANNED,
   promises: [],
-  note: 'No calls yet',
   extraRules: []
 }, {
   id: 'a5',
-  name: 'Recepción Banco Sol',
+  // collections is outbound work — the wizard cannot produce an inbound one, so no seeded
+  // agent should be one either
+  name: 'Cobros WhatsApp Banco Sol',
   personaId: 'frank',
   template: 'collections',
   assignedToDialer: false,
   dialers: [],
-  lastDeployed: null,
   versions: [
-    { id: 'v1', author: 'carina.soca', when: '1 Sep 2026, 08:15', deployed: false, changed: 'First version' }
+    { id: 'v1', author: 'carina.soca', when: '1 Sep 2026, 08:15',changed: 'First version',
+      was: { opener: 'Le escribo por un saldo vencido.', banned: [...DEFAULT_BANNED],
+        tokens: { company: 'Banco Sol', identity: 'verify', goal: 'date5', handoff: 'campaign', campaign: 'Cobros_Ago',
+          disclose: 'amount', amount: AMOUNT_PLACEHOLDER, payment: 'channel', paymentPlace: '',
+          mentions: { overdue: false, contract: false }, overdueUnit: 'days', cols: { ...LIST_COLS },
+          offers: OFFER_IDS.map(id => ({ id, on: false })), closing: '' } } },
+    { id: 'v2', author: 'carina.soca', when: '8 Sep 2026, 16:02',
+      changed: 'Say only that a balance is outstanding, never the amount',
+      was: { banned: [...DEFAULT_BANNED] } },
+    { id: 'v3', author: 'attilio.porchia', when: '15 Sep 2026, 10:25',
+      changed: 'Added abogado to the words it must never use' }
   ],
   calls: 12,
-  direction: 'in',
+  direction: 'out',
   attempts: 3,
   from: 8,
   to: 18,
   tokens: {
     company: 'Banco Sol',
     identity: 'verify',
-    goal: 'link',
-    handoff: 'sup'
+    goal: 'date5',
+    handoff: 'campaign',
+    campaign: 'Cobros_Ago',
+    disclose: 'exists',
+    amount: AMOUNT_PLACEHOLDER,
+    payment: 'channel',
+    paymentPlace: '',
+    // no offers: it says a balance is outstanding and asks when the customer intends to pay
+    mentions: { overdue: false, contract: false },
+    overdueUnit: 'days',
+    cols: { ...LIST_COLS },
+    offers: OFFER_IDS.map(id => ({ id, on: false })),
+    closing: ''
   },
-  opener: '¿Desea consultar su saldo o registrar un pago?',
+  opener: 'Le escribo por su saldo pendiente con Banco Sol.',
   banned: [...DEFAULT_BANNED, 'abogado'],
   promises: [{
     t: 'Never promise to remove interest',
@@ -1033,8 +1137,65 @@ const SEED_AGENTS_RAW = [{
   }, {
     t: 'Never promise a discount on the balance',
     on: true
-  }],
-  note: '12 calls so far',
+  }, { t: THIRD_PARTY_RULE, on: true, kind: 'rule' },
+     { t: THIRD_PARTY_NO_AMOUNT, on: true, kind: 'rule' },
+     { t: THIRD_PARTY_MESSAGE, on: true, kind: 'rule', param: thirdPartyMessageDefault('es', 'Banco Sol') }],
+  extraRules: []
+}, {
+  // the established outbound collections agent: live in a dialer, with a version to replace
+  id: 'a6',
+  name: 'Cobros Banco Sol',
+  personaId: 'antonio',
+  template: 'collections',
+  assignedToDialer: true,
+  dialers: ['Cobros_Septiembre'],
+  versions: [
+    { id: 'v1', author: 'attilio.porchia', when: '26 Aug 2026, 10:12',
+      changed: 'First version', was: { tokens: { company: 'Banco Sol', identity: 'verify',
+        goal: 'date5', handoff: 'campaign', campaign: 'Cobros_Ago', params: { date5: 3, partial: 30 },
+        disclose: 'amount', amount: AMOUNT_PLACEHOLDER, payment: 'channel', paymentPlace: '',
+        mentions: { overdue: true, contract: false }, overdueUnit: 'days', cols: { ...LIST_COLS },
+        offers: [{ id: 'date5', on: true }, { id: 'partial', on: true }, { id: 'minimum', on: false }, { id: 'twopart', on: false }, { id: 'reduced', on: false }], closing: '' } } },
+    { id: 'v2', author: 'carina.soca', when: '4 Sep 2026, 12:20',
+      changed: 'Gave customers five days instead of three' }
+  ],
+  calls: 96,
+  direction: 'out',
+  attempts: 4,
+  from: 9,
+  to: 19,
+  tokens: {
+    company: 'Banco Sol',
+    identity: 'verify',
+    goal: 'date5',
+    handoff: 'campaign',
+    campaign: 'Cobros_Ago',
+    disclose: 'amount',
+    amount: AMOUNT_PLACEHOLDER,
+    payment: 'channel',
+    paymentPlace: '',
+    // it states the amount and how long it's overdue, then offers full payment in 5 days, then 30%
+    params: { date5: 5, partial: 30 },
+    mentions: { overdue: true, contract: false },
+    overdueUnit: 'days',
+    cols: { ...LIST_COLS },
+    offers: [{ id: 'date5', on: true }, { id: 'partial', on: true }, { id: 'minimum', on: false }, { id: 'twopart', on: false }, { id: 'reduced', on: false }],
+    closing: ''
+  },
+  opener: 'Le llamo por su saldo pendiente con Banco Sol.',
+  banned: [...DEFAULT_BANNED, 'abogado'],
+  promises: [{
+    t: 'Never promise to remove interest',
+    on: true
+  }, {
+    t: 'Never promise to stop legal action',
+    on: true
+  }, {
+    t: 'Never promise a discount on the balance',
+    on: true
+  }, { t: THIRD_PARTY_RULE, on: true, kind: 'rule' },
+     { t: THIRD_PARTY_NO_AMOUNT, on: true, kind: 'rule' },
+     { t: THIRD_PARTY_MESSAGE, on: true, kind: 'rule', param: thirdPartyMessageDefault('es', 'Banco Sol') }],
   extraRules: []
 }];
 const SEED_AGENTS = SEED_AGENTS_RAW.map((a, i) => ({
@@ -1078,6 +1239,7 @@ function Pill({
 function Popover({
   onClose,
   align,
+  wide,
   children
 }) {
   const ref = useRef(null);
@@ -1096,7 +1258,7 @@ function Popover({
     };
   }, [onClose]);
   return /*#__PURE__*/React.createElement("div", {
-    className: 'pop' + (align === 'right' ? ' right' : ''),
+    className: 'pop' + (align === 'right' ? ' right' : '') + (wide ? ' pop-wide' : ''),
     ref: ref
   }, children);
 }
@@ -1148,7 +1310,9 @@ function Shell({
   crumb,
   onHome,
   onGo,
-  here
+  here,
+  uiLang,
+  onUiLang
 }) {
   const nav = [{
     g: 'Administrator'
@@ -1259,7 +1423,17 @@ function Shell({
     className: "topbar-t"
   }, crumb), /*#__PURE__*/React.createElement("span", {
     className: "topbar-r"
-  }, I.cup, I.bell, /*#__PURE__*/React.createElement("span", {
+  }, onUiLang && /*#__PURE__*/React.createElement("span", {
+    className: "langsw",
+    role: "radiogroup",
+    "aria-label": "Interface language"
+  }, [['en', 'EN'], ['es', 'ES']].map(([id, lab]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    role: "radio",
+    "aria-checked": uiLang === id,
+    className: 'langsw-b' + (uiLang === id ? ' on' : ''),
+    onClick: () => onUiLang(id)
+  }, lab))), I.cup, I.bell, /*#__PURE__*/React.createElement("span", {
     className: "ava-me"
   }))), children));
 }
@@ -1274,7 +1448,7 @@ function SavedState({
     className: 'saved' + (busy ? ' busy' : '')
   }, /*#__PURE__*/React.createElement("span", {
     className: "saved-dot"
-  }, busy ? I.spinner : I.check), busy ? 'Saving…' : 'Draft saved');
+  }, busy ? I.spinner : I.check), busy ? 'Updating…' : 'Not saved yet');
 }
 function WizardBar({
   step,
@@ -1453,8 +1627,60 @@ function StepBrief({
   const gp = paramOf(goal.id),
     pv = gp ? paramVal(draft, goal.id) : null;
   const setParam = n => setTok('params', { ...(tk.params || {}), [goal.id]: n });
-  const disclosure = 'Le hablo desde un asistente virtual de ' + tk.company + '.';
-  const b3 = (tk.identity === 'none' ? '' : ident.say + ' ') + goalSay(draft);
+  const disclosure = disclosureFor(draft);
+  const col = draft.template === 'collections';
+  const b3 = (tk.identity === 'none' ? '' : saysIn(ident, langOf(draft)) + ' ') + (col ? discloseSentence(draft) + ' ' : '') + goalSay(draft);
+  /* collections only: what it says about the balance, and how the customer pays */
+  const discChip = col && /*#__PURE__*/React.createElement(Chip, {
+    label: discloseFull(draft),
+    hint: "What it tells the right person about the balance.",
+    isOpen: open === 'disclose',
+    onOpen: tog('disclose')
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "radiogroup"
+  }, DISCLOSE.map(o => /*#__PURE__*/React.createElement(Option, {
+    key: o.id,
+    on: o.id === discloseOf(draft).id,
+    onClick: () => {
+      setTok('disclose', o.id);
+      setOpen(null);
+    }
+  }, o.v))), /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: { marginTop: 10 }
+  }, I.shield, /*#__PURE__*/React.createElement("span", null, "Either way the balance is only ever discussed with the intended person. The real amount comes from the campaign\u2019s contact list; ", amountOf(draft), " stands in for it here.")), /*#__PURE__*/React.createElement(MentionsPicker, {
+    draft: draft,
+    set: set
+  }));
+  const payChip = col && /*#__PURE__*/React.createElement(Chip, {
+    label: paymentLabel(draft),
+    hint: "How the customer pays once a date is agreed.",
+    isOpen: open === 'payment',
+    onOpen: tog('payment')
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "radiogroup"
+  }, PAYMENT.map(o => /*#__PURE__*/React.createElement(Option, {
+    key: o.id,
+    on: o.id === paymentOf(draft).id,
+    onClick: () => {
+      setTok('payment', o.id);
+      if (o.id !== 'place') setOpen(null);
+    }
+  }, o.v))), paymentOf(draft).id === 'place' && /*#__PURE__*/React.createElement("input", {
+    className: "inp",
+    style: { marginTop: 10 },
+    autoFocus: true,
+    value: tk.paymentPlace || '',
+    placeholder: "Any Banco Sol branch, quoting contract {contract}",
+    "aria-label": "Where to pay",
+    onChange: e => setTok('paymentPlace', e.target.value)
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: { marginTop: 10 }
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "The link goes to the channel the contact list holds \u2014 the agent never reads out a phone number or an email.")), /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: { marginTop: 8 }
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "It applies whenever a date is recorded \u2014 an accepted offer or the date the customer gives. With no date, the call ends without it. The place may include {contract}.")));
   const companyChip = /*#__PURE__*/React.createElement(Chip, {
     label: tk.company,
     hint: "The name the agent says out loud.",
@@ -1476,10 +1702,11 @@ function StepBrief({
   }, /*#__PURE__*/React.createElement("div", {
     className: "brief-2col"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(StepHead, {
-    title: "This is your agent",
+    title: "What it will do on every call",
+    sub: "Written out in full. Anything underlined is yours to change \u2014 tap it."
   }), /*#__PURE__*/React.createElement("p", {
     className: "brief"
-  }, inb ? /*#__PURE__*/React.createElement(React.Fragment, null, "This agent answers calls to ", companyChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, "This agent calls ", t.who, " ", companyChip, "."), ' ', "It", ' ', /*#__PURE__*/React.createElement(Chip, {
+  }, inb ? /*#__PURE__*/React.createElement(React.Fragment, null, "It answers calls to ", companyChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, "It calls ", t.who, " ", companyChip, "."), ' ', "On each one it", ' ', /*#__PURE__*/React.createElement(Chip, {
     label: ident.v,
     hint: "How it opens, before anything else.",
     isOpen: open === 'identity',
@@ -1496,7 +1723,12 @@ function StepBrief({
   }, o.v))), draft.template === 'collections' && /*#__PURE__*/React.createElement("div", {
     className: "note",
     style: { marginTop: 11 }
-  }, I.shield, /*#__PURE__*/React.createElement("span", null, "On collections calls the agent must establish who it is speaking to. The balance can never be mentioned to anyone else, so there is no option to speak to whoever answers."))), ", ", t.mid, ' ', /*#__PURE__*/React.createElement(Chip, {
+  }, I.shield, /*#__PURE__*/React.createElement("span", null, "On collections calls the agent must establish who it is speaking to. The balance can never be mentioned to anyone else, so there is no option to speak to whoever answers."))), col ? /*#__PURE__*/React.createElement(React.Fragment, null, ', ', discChip, ', ', /*#__PURE__*/React.createElement(OffersChip, {
+    draft: draft,
+    set: set,
+    open: open,
+    tog: tog
+  }), ', ', fallbackPhrase(draft), '.', ' ', "Once a date is agreed, it ", payChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, t.mid ? ', ' + t.mid.replace(/,?\s*and$/, '') + ', then ' : ', then ', /*#__PURE__*/React.createElement(Chip, {
     label: goal.v,
     hint: "The one thing the call is for.",
     isOpen: open === 'goal',
@@ -1520,8 +1752,8 @@ function StepBrief({
     pv: pv,
     setParam: setParam,
     close: () => setOpen(null)
-  })), ".", ' ', "If someone asks for a person, it ", /*#__PURE__*/React.createElement(Chip, {
-    label: hand.v,
+  })), "."), ' ', "If someone asks for a person, it ", /*#__PURE__*/React.createElement(Chip, {
+    label: handLabel(draft),
     align: "right",
     hint: "The escape hatch. Always available to the caller.",
     isOpen: open === 'handoff',
@@ -1533,17 +1765,51 @@ function StepBrief({
     on: o.id === tk.handoff,
     onClick: () => {
       setTok('handoff', o.id);
-      setOpen(null);
+      if (o.id !== 'campaign') setOpen(null);
     }
-  }, o.v)))), "."), /*#__PURE__*/React.createElement("p", {
+  }, o.v))), tk.handoff === 'campaign' && /*#__PURE__*/React.createElement("select", {
+    className: "inp",
+    style: { marginTop: 10 },
+    value: campaignOf(draft),
+    "aria-label": "Campaign",
+    onChange: e => setTok('campaign', e.target.value)
+  }, CAMPAIGNS.map(c => /*#__PURE__*/React.createElement("option", { key: c, value: c }, c))), /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: { marginTop: 10 }
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "A transfer goes to the people working that campaign. Taking a message ends the call and sends your team what it collected."))), "."), /*#__PURE__*/React.createElement("p", {
     className: "brief",
     style: {
       marginTop: 22
     }
-  }, "Every call ", inb ? 'it answers ' : '', "opens with ", /*#__PURE__*/React.createElement("span", {
-    className: "chip-fix",
-    title: "Required disclosure \u2014 cannot be removed"
-  }, I.lock, disclosure), ' ', /*#__PURE__*/React.createElement(Chip, {
+  }, "Every call opens with the required disclosure:", col ? /*#__PURE__*/React.createElement("span", {
+    className: "chip-wrap chip-fix-block"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: 'chip chip-lockpick' + (open === 'disclosure' ? ' open' : ''),
+    onClick: tog('disclosure'),
+    title: "Required on every call \u2014 choose the wording, it cannot be removed"
+  }, I.lock, disclosure), open === 'disclosure' && /*#__PURE__*/React.createElement(Popover, {
+    onClose: tog('disclosure')
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pop-t"
+  }, "The disclosure"), /*#__PURE__*/React.createElement("div", {
+    className: "pop-h"
+  }, "Said first on every call. Pick the wording \u2014 it cannot be switched off."), /*#__PURE__*/React.createElement("div", {
+    role: "radiogroup",
+    "aria-label": "Disclosure wording"
+  }, DISCLOSURES.map(o => /*#__PURE__*/React.createElement(Option, {
+    key: o.id,
+    on: o.id === disclosureOpt(draft).id,
+    onClick: () => {
+      setTok('disclosure', o.id);
+      setOpen(null);
+    }
+  }, disclosureLine(o, langOf(draft), tk.company)))), /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: { marginTop: 10 }
+  }, I.lock, /*#__PURE__*/React.createElement("span", null, "Every option says it is a virtual assistant and names ", tk.company, ". That part is not optional.")))) : /*#__PURE__*/React.createElement("span", {
+    className: "chip-fix chip-fix-block",
+    title: "Required by law \u2014 cannot be removed"
+  }, I.lock, disclosure), "Then its opener:", ' ', /*#__PURE__*/React.createElement(Chip, {
     label: draft.opener,
     hint: "Your opener, in the agent's own voice.",
     isOpen: open === 'opener',
@@ -1560,7 +1826,17 @@ function StepBrief({
     style: {
       marginTop: 9
     }
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "Keep it to one sentence. ", p.name, " says it in ", p.reg.split(' · ')[0], "."))))), /*#__PURE__*/React.createElement("div", {
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "Keep it to one sentence. ", p.name, " says it in ", p.reg.split(' · ')[0], ".")))), col && /*#__PURE__*/React.createElement("p", {
+    className: "brief",
+    style: {
+      marginTop: 22
+    }
+  }, "And it ends every call with ", /*#__PURE__*/React.createElement(ClosingChip, {
+    draft: draft,
+    set: set,
+    open: open,
+    tog: tog
+  }), ".")), /*#__PURE__*/React.createElement("div", {
     className: "prev"
   }, /*#__PURE__*/React.createElement("div", {
     className: "prev-hd"
@@ -1586,12 +1862,17 @@ function StepBrief({
     key: "c1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "bub-lab"
-  }, "Customer"), t.custSay), /*#__PURE__*/React.createElement("div", {
+  }, "Customer"), inLang(t, 'custSay', langOf(draft))), /*#__PURE__*/React.createElement("div", {
     className: "bub bub-a",
     key: 'a' + b3
   }, /*#__PURE__*/React.createElement("span", {
     className: "bub-lab"
-  }, p.name, " \xB7 0:11"), b3)), ))), /*#__PURE__*/React.createElement(Foot, {
+  }, p.name, " \xB7 0:11"), b3), col && closingOf(draft) && /*#__PURE__*/React.createElement("div", {
+    className: "bub bub-a",
+    key: 'z' + closingOf(draft)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "bub-lab"
+  }, p.name, " \xB7 end"), closingOf(draft))), ))), /*#__PURE__*/React.createElement(Foot, {
     onBack: back,
     onNext: next,
     nextOk: !!tk.company.trim(),
@@ -1636,12 +1917,11 @@ function TagInput({
 
 /* ============================ 7 · TEST ============================ */
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-function agentReply(input, draft) {
+function agentReply(input, draft, history) {
   const s = norm(input),
     tk = draft.tokens;
   const goal = val(goalsFor(draft.template), tk.goal),
     hand = val(HANDOFF, tk.handoff);
-  const guarded = draft.promises.some(p => /price|discount|interest/i.test(p.t));
   if (draft.template === 'reception') {
     const k = draft.knowledge || { about: '', urls: [] };
     const ask = (draft.collect || []).filter(f => f.on);
@@ -1650,12 +1930,16 @@ function agentReply(input, draft) {
       txt: 'Of course.' + (first || ' May I have your name?'),
       why: 'Goal: collects the caller’s details'
     };
-    if (/appointment|book|schedule|cita|agendar/.test(s)) return tk.goal === 'book' ? {
+    if (/appointment|book|schedule|cita|agendar/.test(s)) return goalIds(draft).indexOf('book') > -1 ? {
       txt: 'I can book that from the calendar. Which day works best for you?',
       why: 'Goal: books from the connected calendar'
     } : {
       txt: 'I can’t book that myself, but I’ll take your details and the team will call you back to set it up.' + first,
       why: 'Goal setting → takes a message instead'
+    };
+    if (/robot|human|person|someone|speak to|real|assistant|machine/.test(s)) return {
+      txt: 'You’re speaking with a virtual assistant for ' + tk.company + '. ' + (hand.sayEn || hand.say),
+      why: 'Rule: always disclose · handoff setting'
     };
     if (/hours|open|opening|close|horario|abren/.test(s)) return (k.about || '').trim() ? {
       txt: 'Sure. ' + k.about.trim().split('. ')[0].replace(/\.$/, '') + '. Is there anything else I can help with?',
@@ -1665,83 +1949,247 @@ function agentReply(input, draft) {
       why: 'Nothing in the business profile yet → takes a message'
     };
   }
-  if (/robot|humano|persona|quien habla|con quien|maquina|grabacion|asistente/.test(s)) return {
-    txt: 'Soy un asistente virtual de ' + tk.company + '. ' + hand.say,
+  /* everything below answers in the agent's own language; en picks the second string */
+  const L = langOf(draft), pick = (es, en) => L === 'en' ? en : es;
+  const handSay = saysIn(hand, L);
+  if (/robot|humano|persona|quien habla|con quien|maquina|grabacion|asistente|human|speak to|speaking to|who am i|am i talking|real person/.test(s)) return {
+    txt: pick('Soy un asistente virtual de ' + tk.company + '. ',
+             'You’re speaking with a virtual assistant for ' + tk.company + '. ') + handSay,
     why: 'Rule: always disclose · handoff setting'
   };
-  if (/no me llame|no vuelva a llamar|de la lista|dar de baja|no quiero recibir|no llame mas/.test(s)) return {
-    txt: 'Entendido, no le insisto más. Cierro la llamada aquí. Buen día.',
+  const tp = thirdParty(draft), col = draft.template === 'collections';
+  if (/no soy|no est|se equivoc|numero equivocado|wrong number|not here|he.s out|she.s out|who.s calling/i.test(s)
+      && (tp.ends || tp.message !== null)) {
+    /* the three third-party rules, read together: the message it may leave, then it ends; and
+       the balance is never in this reply — by construction, nothing here quotes it */
+    const bye = pick('Que tenga buen día.', 'Have a good day.') + (col && closingOf(draft) ? ' ' + closingOf(draft) : '');
+    if (tp.message) return {
+      txt: tp.message + ' ' + bye,
+      why: 'Rule: leaves the message you set, then ends the call' + (tp.noAmount ? ' · the amount is never disclosed' : '')
+    };
+    return {
+      txt: pick('Disculpe la molestia, no dejo ningún detalle. ', 'Sorry to trouble you — I’ll not leave any details. ') + bye,
+      why: 'Rule: ends the call — the wrong person answered' + (tp.noAmount ? ' · the amount is never disclosed' : '')
+    };
+  }
+  if (col && /como pago|donde pago|como le pago|link de pago|enlace de pago|how do i pay|where do i pay|payment link|how can i pay/i.test(s)) return {
+    txt: paymentSay(draft),
+    why: 'Payment setting: ' + paymentLabel(draft)
+  };
+  /* the customer names a day to pay (the answer the "when do you intend to pay" goal asks for):
+     the agent records it and says how to pay — it never pushes a date the customer did not give */
+  const DAYWORD = /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|manana|semana|quincena|fin de mes|el \d{1,2}|monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week|end of the month|payday|on the \d{1,2})\b/i;
+  if (col && DAYWORD.test(s)) return {
+    txt: pick('Perfecto, dejo registrada esa fecha. ', 'Perfect, I have noted that date. ') + paymentSay(draft) + pick(' Gracias por su tiempo.', ' Thanks for your time.') + colEnd(draft),
+    why: 'Fallback: records the date the customer gave · payment setting: ' + paymentLabel(draft),
+    stage: 'done',
+    // the day the customer named, in their words — the agent never turns it into a date it chose
+    promise: promiseFor(draft, 'intent', (s.match(DAYWORD) || [s])[0].trim() + (L === 'en' ? ' (as stated)' : ' (según el cliente)'))
+  };
+  if (/no me llame|no vuelva a llamar|de la lista|dar de baja|no quiero recibir|no llame mas|do ?n.?t call|do not call|stop calling|take me off/i.test(s)) return {
+    txt: pick('Entendido, no le insisto más. Cierro la llamada aquí. Buen día.',
+      'Understood — I will not call again. I will close the call here. Have a good day.') + (col ? colEnd(draft) : ''),
     why: 'Ends the call · the disposition is set outside the agent'
   };
-  if (/no tengo|no puedo pagar|sin plata|sin dinero|desemplead/.test(s)) return {
-    txt: 'Entiendo. Podemos registrar un abono parcial, ¿cuánto podría abonar esta semana?',
+  if (col) { const r = collectionsTurn(s, draft, history, pick); if (r) return r; }
+  if (/no tengo|no puedo pagar|sin plata|sin dinero|desemplead|can.?t pay|cannot pay|no money|no way to pay|out of work|unemployed/i.test(s)) return {
+    txt: pick('Entiendo. Podemos registrar un abono parcial, ¿cuánto podría abonar esta semana?',
+      'I understand. We can take a part payment — how much could you manage this week?'),
     why: 'Rule: offer a partial payment before escalating'
   };
-  if (/interes|descuento|rebaj|condon/.test(s)) return {
-    txt: (guarded ? 'No le puedo prometer quitar intereses ni descuentos. ' : '') + goalSay(draft),
-    why: guarded ? 'Rule: never promise a discount or removing interest' : 'Goal setting'
+  const guard = guardFor(draft, s);
+  if (guard && col) {
+    /* refuse what the rule forbids, then put the offer that is on the table back on it */
+    const st = colStage(history), lead = guard.rule ? pick(guard.g.es, guard.g.en) : '';
+    const r = typeof st === 'number' || st === 'intent' ? colOffer(draft, st === 'intent' ? activeOffers(draft).length : st, pick, lead)
+      : colOpenOffer(draft, pick, lead);
+    return { ...r, why: guard.rule ? 'Rule: ' + guard.rule.t : 'Nothing stops it answering that · ' + r.why };
+  }
+  if (guard) return {
+    txt: (guard.rule ? pick(guard.g.es, guard.g.en) : '') + goalSay(draft),
+    why: guard.rule ? 'Rule: ' + guard.rule.t : 'Nothing stops it answering that · goal setting'
   };
-  if (/precio|cuanto|cuesta|vale|tarifa/.test(s)) return {
-    txt: (guarded ? 'No le puedo dar un precio final por teléfono. ' : '') + goalSay(draft),
-    why: guarded ? 'Rule: never promise a final price' : 'Goal setting'
-  };
-  if (/no puedo|ocupad|trabaj|otro dia|otro horario|mas tarde|cambiar|mover|reagenda/.test(s)) return {
-    txt: 'Sin problema. Tengo el viernes a las 9:00 o el lunes a las 15:00. ¿Alguno le sirve?',
+  if (/no puedo|ocupad|trabaj|otro dia|otro horario|mas tarde|cambiar|mover|reagenda|can.?t do that day|cannot do that|another day|reschedule|move it|later/i.test(s)) return {
+    txt: pick('Sin problema. Tengo el viernes a las 9:00 o el lunes a las 15:00. ¿Alguno le sirve?',
+      'No problem. I have Friday at nine or Monday at three. Would either of those work?'),
     why: 'Rule: offer another slot before taking a message'
   };
-  if (/^(si|claro|ok|dale|listo|confirmo|de acuerdo|perfecto|bueno)\b/.test(s)) return {
+  if (/^(si|claro|ok|dale|listo|confirmo|de acuerdo|perfecto|bueno|yes|sure|confirmed|agreed|fine|okay)\b/i.test(s)) return {
     // only the callback goal has a number to read back
     txt: tk.goal === 'callback'
-      ? 'Perfecto. Le repito el número para asegurarme de que quedó bien, y le devolvemos la llamada a esa hora.'
-      : 'Perfecto, queda confirmado. Le enviamos el detalle por WhatsApp. Gracias por su tiempo.',
-    why: 'Goal reached · call ends'
+      ? pick('Perfecto. Le repito el número para asegurarme de que quedó bien, y le devolvemos la llamada a esa hora.',
+          'Perfect. Let me read the number back so we have it right, and we will call you at that time.')
+      : col
+      ? pick('Perfecto, queda registrado. ', 'Perfect, that is noted. ') + paymentSay(draft) + pick(' Gracias por su tiempo.', ' Thanks for your time.')
+      : pick('Perfecto, queda confirmado. Le enviamos el detalle por WhatsApp. Gracias por su tiempo.',
+          'Perfect, that is confirmed. We will send the details on WhatsApp. Thanks for your time.'),
+    why: col ? 'Goal reached · payment setting: ' + paymentLabel(draft) : 'Goal reached · call ends'
   };
-  if (/gracias|adios|chao|hasta luego/.test(s)) return {
-    txt: 'Gracias a usted. Que tenga buen día.',
+  if (/gracias|adios|chao|hasta luego|thanks|thank you|goodbye|bye/i.test(s)) return {
+    txt: pick('Gracias a usted. Que tenga buen día.', 'Thank you. Have a good day.') + (col ? colEnd(draft) : ''),
     why: 'Closing'
   };
   const hv = draft.handover || [];
-  if (hv.indexOf('angry') > -1 && /desastre|inaceptable|verg[uü]enza|harto|molesto|estafa|p[eé]simo/.test(s)) return {
-    txt: 'Le entiendo, y lo siento. ' + hand.say,
-    why: 'Handover rule: the customer is upset'
-  };
-  if (hv.indexOf('legal') > -1 && /abogado|demanda|queja|superintendencia|denuncia|defensor/.test(s)) return {
-    txt: 'Prefiero que esto lo vea una persona. ' + hand.say,
+  if (hv.indexOf('legal') > -1 && /abogado|demanda|queja|superintendencia|denuncia|defensor|lawyer|solicitor|complaint|regulator|sue you|legal action/i.test(s)) return {
+    txt: pick('Prefiero que esto lo vea una persona. ', 'I would rather a person looked at this. ') + handSay,
     why: 'Handover rule: a complaint or a lawyer is mentioned'
   };
-  if (hv.indexOf('consent') > -1 && /no autoric|no di permiso|qui[eé]n les dio mi n[uú]mero|nunca acept/.test(s)) return {
-    txt: 'Con gusto lo revisamos. ' + hand.say,
-    why: 'Handover rule: the customer never agreed to be contacted'
+  const own = ownHandoverHit(draft, s);
+  if (own) return {
+    txt: pick('Prefiero que esto lo vea una persona. ', 'I would rather a person looked at this. ') + handSay,
+    why: 'Your own handover rule: “' + own + '”'
   };
-  if (/urgente|demanda|embargo|abogado/.test(s)) return {
-    txt: 'Le entiendo. ' + hand.say,
-    why: 'Word on the never-use list → rephrase and hand off'
+  const bad = bannedHit(draft, s);
+  if (bad) return {
+    txt: pick('Le entiendo. ', 'I understand. ') + handSay,
+    why: '“' + bad + '” is on its never-use list → rephrase and hand off'
   };
+  if (col) return colOpenOffer(draft, pick, '');
   return {
     txt: goalSay(draft),
     why: 'Goal setting'
   };
 }
-const QUICKS = ['¿Con quién hablo?', 'Ese día no puedo', '¿Cuánto cuesta?', 'No tengo cómo pagar ahora', 'Esto es un desastre', '¿Quién les dio mi número?', 'Sí, confirmo', 'Quiero hablar con una persona', 'No me llame más'];
+/* ---- Collections, turn by turn -----------------------------------------------------------
+   The scripted call keeps one piece of state on each agent line: which offer is on the table
+   (its position in the ordered list), 'intent' once it has fallen back to asking for a date, or
+   'done' once a date was recorded or the call ended without one. */
+const colEnd = d => closingOf(d) ? ' ' + closingOf(d) : '';
+const colStage = history => { const a = (history || []).filter(m => m.who === 'a' && m.stage !== undefined);
+  return a.length ? a[a.length - 1].stage : null; };
+const colOffer = (d, i, pick, lead, why) => { const offers = activeOffers(d);
+  if (i < offers.length) return { txt: lead + offerSay(d, offers[i].id), stage: i,
+    why: why || 'Offer ' + (i + 1) + ' of ' + offers.length + ': ' + offerLabel(d, offers[i].id) };
+  return { txt: lead + intentSay(d), stage: 'intent',
+    why: offers.length ? 'No offer accepted → fallback: asks when the customer intends to pay'
+                       : 'No offers ticked → fallback: asks when the customer intends to pay' }; };
+/* first contact with the right person: the balance, what else it mentions, then offer 1 */
+const colOpenOffer = (d, pick, lead) => { const r = colOffer(d, 0, pick, lead + discloseSentence(d) + ' ');
+  return { ...r, why: discloseFull(d) + ' · ' + r.why }; };
+const DECLINE = /^(no|nop|tampoco|imposible)\b|no me alcanza|no puedo|no tengo|no me sirve|es mucho|demasiado|can.?t|cannot|no way|too much|not possible|afford/i;
+const ACCEPT = /^(si|claro|ok|dale|listo|confirmo|de acuerdo|perfecto|bueno|me sirve|yes|sure|confirmed|agreed|fine|okay|that works)\b/i;
+function collectionsTurn(s, d, history, pick) {
+  const stage = colStage(history), offers = activeOffers(d);
+  if (stage === 'done') return null;
+  /* asking for interest off or a discount while a reduced balance is on offer: that IS the offer */
+  if (reducedOn(d) && /interes|descuento|rebaj|discount|interest/i.test(s)) {
+    const i = offers.findIndex(g => g.id === 'reduced');
+    return colOffer(d, i, pick, pick('Puedo ofrecerle esto: ', 'Here is what I can offer: '), 'Offer: a reduced balance without interest');
+  }
+  if (DECLINE.test(s)) {
+    if (stage === 'intent') return {
+      txt: pick('Entiendo. Dejo constancia de que por ahora no puede darme una fecha. Gracias por su tiempo.',
+        'I understand. I will note that you cannot give me a date for now. Thanks for your time.') + colEnd(d),
+      why: 'No date recorded → the call ends · the payment step does not apply', stage: 'done' };
+    if (typeof stage === 'number') return colOffer(d, stage + 1, pick, pick('Entiendo. ', 'I understand. '));
+    return colOffer(d, 0, pick, pick('Entiendo. ', 'I understand. '));
+  }
+  if (ACCEPT.test(s)) {
+    if (typeof stage === 'number' && stage < offers.length) { const id = offers[stage].id;
+      return { txt: pick('Perfecto, queda registrado. ', 'Perfect, that is noted. ') + paymentSay(d) + pick(' Gracias por su tiempo.', ' Thanks for your time.') + colEnd(d),
+        why: 'Offer accepted: ' + offerLabel(d, id) + ' · payment setting: ' + paymentLabel(d),
+        stage: 'done', promise: promiseFor(d, id) }; }
+    if (stage === 'intent') return { txt: pick('¿Qué fecha le queda bien?', 'Which date works for you?'),
+      why: 'Fallback: waiting for the date the customer gives', stage: 'intent' };
+    return colOpenOffer(d, pick, '');
+  }
+  return null;
+}
+/* What a customer actually says to THIS agent. One generic set meant a collections agent
+   offered "I cannot do that day" and "How much does it cost?" — lines from two other jobs.
+   Each set is chosen so every line reaches a real branch: the identity check, the goal, a rule
+   the template ticks, a handover trigger it seeds, and the two that end a call. */
+const QUICKS_BY_TEMPLATE = {
+  collections: {
+    es: ['¿Con quién hablo?', 'No tengo cómo pagar ahora', '¿Me quita los intereses?',
+         'Voy a hablar con mi abogado', '¿Me hace un descuento?', 'No soy yo, se equivocó',
+         '¿Cómo pago?', 'No me alcanza', 'Le pago el viernes', 'Sí, confirmo', 'No me llame más'],
+    en: ['Who am I speaking to?', 'I have no way to pay right now', 'Can you drop the interest?',
+         'I am speaking to my lawyer', 'Can I get a discount?', 'Wrong person, she is not here',
+         'How do I pay?', 'That is too much for me', 'I will pay on Friday', 'Yes, confirmed', 'Do not call me again']
+  },
+  appointments: {
+    es: ['¿Con quién hablo?', 'Ese día no puedo', '¿Me lo puede mover?', '¿Me atiende otro médico?',
+         'No soy yo, se equivocó', 'Sí, confirmo', 'Quiero hablar con una persona', 'No me llame más'],
+    en: ['Who am I speaking to?', 'I cannot do that day', 'Could you move it?', 'Can I see a different doctor?',
+         'Wrong person, she is not here', 'Yes, confirmed', 'I want to speak to a person', 'Do not call me again']
+  },
+  leads: {
+    es: ['¿Con quién hablo?', '¿Cuánto cuesta?', '¿Me hace un descuento?', 'Mándemelo por WhatsApp',
+         'No soy yo, se equivocó', 'Sí, me interesa', 'Quiero hablar con una persona', 'No me llame más'],
+    en: ['Who am I speaking to?', 'How much does it cost?', 'Can you give me a discount?',
+         'Send it to me on WhatsApp', 'Wrong person, she is not here', 'Yes, I am interested',
+         'I want to speak to a person', 'Do not call me again']
+  },
+  messages: {
+    es: ['¿Con quién hablo?', '¿A qué hora me llaman?', 'Necesito que me solucionen esto', 'Llamé ayer y nadie contestó',
+         'No soy yo, se equivocó', 'Sí, confirmo', 'Quiero hablar con una persona', 'No me llame más'],
+    en: ['Who am I speaking to?', 'What time will you call?', 'I need you to fix it',
+         'I rang yesterday and nobody answered', 'Wrong person, she is not here', 'Yes, confirmed',
+         'I want to speak to a person', 'Do not call me again']
+  }
+};
+/* the fallback, for a template with no set of its own */
+const QUICKS = ['¿Con quién hablo?', 'No soy yo, se equivocó', 'Gracias, adiós', 'Sí, confirmo',
+  'Quiero hablar con una persona', 'No me llame más'];
+const QUICKS_EN = ['Who am I speaking to?', 'Wrong person, she is not here', 'Thanks, goodbye',
+  'Yes, confirmed', 'I want to speak to a person', 'Do not call me again'];
+const quicksFor = d => { if(d.template === 'reception') return RECEPTION_QUICKS;
+  const set = QUICKS_BY_TEMPLATE[d.template], lang = langOf(d) === 'en' ? 'en' : 'es';
+  return set ? set[lang] : (lang === 'en' ? QUICKS_EN : QUICKS); };
+/* Live mode. The page asks Claude for the agent's next line through the artifact runtime's
+   `sample` capability — the same call the Coach AI prototype makes — from a prompt composed of
+   every setting on the previous screens (agentPrompt). `modelTier: 'quick'` keeps it on the
+   fast, low-effort tier. Guarded: with no runtime the status pill reads "Script" and the scripted
+   simulator answers as it always has; a failed live turn falls back for that turn and says so. */
+const liveRuntime = () => (typeof window !== 'undefined' && window.claude
+  && typeof window.claude.use === 'function') ? window.claude : null;
+let liveSampler = null;                                   // resolved once, reused across turns
+async function liveReply(draft, history, input) {
+  const rt = liveRuntime();
+  if (!rt) return null;
+  try {
+    if (!liveSampler) liveSampler = await rt.use('sample');
+    const { text } = await liveSampler(liveTurns(draft, history, input), { cache: false, modelTier: 'quick' });
+    const t = String(text == null ? '' : text);
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a > -1 && b > a) {
+      const j = JSON.parse(t.slice(a, b + 1));
+      if (j && j.say) return { txt: String(j.say), why: 'Live · ' + (j.why ? String(j.why) : 'Claude'),
+        promise: j.promise && j.promise.date ? { offer: String(j.promise.offer || 'intent'), amount: String(j.promise.amount || ''), date: String(j.promise.date) } : undefined };
+    }
+    const plain = t.trim();
+    return plain ? { txt: plain, why: 'Live · Claude' } : null;
+  } catch (e) {
+    liveSampler = null;                                  // a stale sampler is re-resolved next turn
+    return null;
+  }
+}
 function StepTest({
   draft,
   set,
   next,
-  back
+  back,
+  testExit
 }) {
+  const [live] = useState(() => !!liveRuntime());
   const p = persona(draft.personaId),
     tk = draft.tokens;
   const inb = draft.direction === 'in';
-  const open = disclosureFor(draft) + ' ' + draft.opener;
+  /* The agent is set to establish who it is speaking to, and the brief's preview says so — but
+     the simulated call used to skip straight past it. An agent that rings you and opens with a
+     balance before checking it has the right person is the thing the setting exists to prevent. */
+  const identLine = (draft.template !== 'reception' && tk.identity !== 'none')
+    ? ' ' + saysIn(val(identityFor(draft.template), tk.identity), langOf(draft)) : '';
+  const open = disclosureFor(draft) + ' ' + draft.opener + identLine;
   const [msgs, setMsgs] = useState([{
     who: 'a',
     txt: open,
-    why: 'Fixed disclosure + your opener'
+    why: 'Fixed disclosure + your opener' + (identLine ? ' + the identity check' : '')
   }]);
   const [v, setV] = useState('');
   const [typing, setTyping] = useState(false);
   const [call, setCall] = useState(null);
-  const [target, setTarget] = useState('draft');   // read-only: which version to run
   const scroll = useRef(null);
   useEffect(() => {
     if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight;
@@ -1749,18 +2197,25 @@ function StepTest({
   const send = txt => {
     const m = (txt || v).trim();
     if (!m) return;
+    const history = msgs;                       // the turns before this one
     setMsgs(x => [...x, {
       who: 'c',
       txt: m
     }]);
     setV('');
     setTyping(true);
+    const scripted = () => ({ who: 'a', ...agentReply(m, draft, history) });
+    if (live) {
+      liveReply(draft, history, m).then(r => {
+        setTyping(false);
+        setMsgs(x => [...x, r ? { who: 'a', ...r }
+          : { ...scripted(), why: 'Live reply failed → script · ' + agentReply(m, draft, history).why }]);
+      });
+      return;
+    }
     setTimeout(() => {
       setTyping(false);
-      setMsgs(x => [...x, {
-        who: 'a',
-        ...agentReply(m, draft)
-      }]);
+      setMsgs(x => [...x, scripted()]);
     }, 700);
   };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
@@ -1770,20 +2225,7 @@ function StepTest({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(StepHead, {
     title: "Try it before anyone else does",
     sub: 'You play the customer' + (inb ? ' who just called in' : '') + '. Type anything, or tap a line below. Nothing here reaches a real phone.'
-  }), (draft.versions || []).length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "mono"
-  }, "Version"), /*#__PURE__*/React.createElement("select", {
-    className: "inp",
-    style: { maxWidth: 300 },
-    value: target,
-    "aria-label": "Which version to test",
-    onChange: e => setTarget(e.target.value)
-  }, testTargets(draft).map(t => /*#__PURE__*/React.createElement("option", {
-    key: t.id,
-    value: t.id
-  }, t.label)))), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "chatbox"
   }, /*#__PURE__*/React.createElement("div", {
     className: "prev-hd"
@@ -1798,11 +2240,14 @@ function StepTest({
   }, p.name), /*#__PURE__*/React.createElement("span", {
     className: "mono"
   }, tk.company), /*#__PURE__*/React.createElement("span", {
-    className: "pill pill-reh",
+    className: 'pill ' + (live ? 'pill-live' : 'pill-reh'),
     style: {
       marginLeft: 'auto'
-    }
-  }, /*#__PURE__*/React.createElement("i", null), "Simulation")), /*#__PURE__*/React.createElement("div", {
+    },
+    title: live
+      ? 'Replies come from Claude (quick tier), from a prompt built out of this agent’s settings'
+      : 'Live mode is not available in this build — replies follow a script that reads the same settings'
+  }, /*#__PURE__*/React.createElement("i", null), live ? 'Live · Claude' : 'Script')), /*#__PURE__*/React.createElement("div", {
     className: "chat-scroll",
     ref: scroll
   }, msgs.map((m, i) => /*#__PURE__*/React.createElement("div", {
@@ -1820,13 +2265,16 @@ function StepTest({
       marginTop: 5,
       marginLeft: 4
     }
-  }, m.why))), typing && /*#__PURE__*/React.createElement("div", {
+  }, m.why), m.promise && /*#__PURE__*/React.createElement(PromiseCard, {
+    p: m.promise,
+    title: "End of call \xB7 promise recorded"
+  }))), typing && /*#__PURE__*/React.createElement("div", {
     className: "bub bub-a"
   }, /*#__PURE__*/React.createElement("span", {
     className: "typing"
   }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)))), /*#__PURE__*/React.createElement("div", {
     className: "quick"
-  }, (draft.template === 'reception' ? RECEPTION_QUICKS : QUICKS).map(q => /*#__PURE__*/React.createElement("button", {
+  }, quicksFor(draft).map(q => /*#__PURE__*/React.createElement("button", {
     className: "qbtn",
     key: q,
     onClick: () => send(q)
@@ -1843,7 +2291,7 @@ function StepTest({
     "aria-label": "Send"
   }, I.send))), /*#__PURE__*/React.createElement("div", {
     className: "tnote"
-  }, "Test interactions are not recorded and don\u2019t affect metrics.")), /*#__PURE__*/React.createElement("div", {
+  }, "Test conversations spend credits like any other interaction \u2014 the test agent itself costs nothing extra. Tests are not written to the call log and don\u2019t affect metrics.", live ? ' Live replies use your account’s Claude credits.' : '')), /*#__PURE__*/React.createElement("div", {
     className: "side"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1861,7 +2309,7 @@ function StepTest({
     onBack: back,
     onNext: next,
     nextOk: true,
-    nextLabel: "Save & open the agent",
+    nextLabel: testExit === 'agent' ? "Back to the agent" : "Back to the rules",
     wide: true
   }));
 }
@@ -2040,7 +2488,7 @@ function CallList({
       margin: '6px auto 0',
       maxWidth: '44ch'
     }
-  }, p.name, " has not made any calls yet. Deploy it into a dialer and its calls show up here.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, p.name, " has not made any calls yet. Assign it to a dialer in the Outbound Hub and its calls show up here.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8,
@@ -2393,7 +2841,7 @@ function Correction({
     style: {
       marginTop: 12
     }
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "Applies to future calls only. ", 'It reaches live calls on the next deploy.')), /*#__PURE__*/React.createElement("div", {
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "Applies to future calls only. ", 'It reaches live calls as soon as it is applied.')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 9,
@@ -2412,6 +2860,33 @@ function Correction({
   }, "Apply change")))))));
 }
 
+/* Saving an edit of an agent that is live in a dialer. Saving replaces the version it runs, so the
+   warning names the dialers and that version before the supervisor commits to it. */
+function SaveLiveWarning({
+  agent,
+  onCancel,
+  onConfirm
+}) {
+  const a = agent || {},
+    dials = dialersOf(a),
+    cur = currentVersion(a);
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: "This agent is live",
+    onClose: onCancel,
+    actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-gho",
+      onClick: onCancel
+    }, "Keep editing"), /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-pri",
+      onClick: onConfirm
+    }, "Save and replace"))
+  }, /*#__PURE__*/React.createElement("p", {
+    style: { marginTop: 0 }
+  }, /*#__PURE__*/React.createElement("b", null, a.name), " is live in ", /*#__PURE__*/React.createElement("b", null, andList(dials)), ". Saving replaces the version it is running", cur ? /*#__PURE__*/React.createElement(React.Fragment, null, ", ", /*#__PURE__*/React.createElement("b", null, cur.id)) : null, ", in every one of them at once."), /*#__PURE__*/React.createElement("div", {
+    className: "note"
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "Any interactions in progress will be affected.")));
+}
+
 /* ============================ APP ROOT ============================ */
 function App() {
   const [agents, setAgents] = useState(SEED_AGENTS);
@@ -2424,6 +2899,11 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [talk, setTalk] = useState(false);
+  const [askSave, setAskSave] = useState(false);   // editing a live agent: warn before saving
+  /* the interface language; every element is translated on its way to the screen (i18n.js) */
+  const [uiLang, setUiLangState] = useState(UI_LANG);
+  UI_LANG = uiLang;
+  const switchUi = l => { setUiLang(l); setUiLangState(UI_LANG); };
   const timer = useRef(null);
   const savedRef = useRef(null);
   const toast = t => {
@@ -2474,18 +2954,18 @@ function App() {
     setMaxStep(5);
     setScr({ n: 'wizard', editing: id, from: 'agent' });
   };
-  /* Recovering a version does not publish anything. It lays that version's configuration over
-     the agent as unsaved changes and opens the Scope screen, so it can be read before Deploy. */
+  /* Recovering a version changes nothing by itself. It loads that version's configuration onto
+     the Scope screen; saving it from the wizard makes it the current version, and leaving without
+     saving leaves the agent as it was. */
   const recoverVersion = (id, v) => {
     const a = agents.find(x => x.id === id);
     if (!a) return;
     const cfg = versionConfig(a, v);
-    setAgents(agents.map(x => x.id === id ? { ...x, ...cfg, dirty: v.id } : x));
     setDraft({ ...newDraft(), ...a, ...cfg });
     setStep(3);
     setMaxStep(5);
     setScr({ n: 'wizard', editing: id, recovered: v.id });
-    toast(v.id + ' loaded. Read it here, then Deploy it when you are ready.');
+    toast(v.id + ' loaded. Review it, then save to make it the current version.');
   };
   const deleteAgent = id => {
     const a = agents.find(x => x.id === id);
@@ -2495,23 +2975,24 @@ function App() {
   };
   const finish = () => {
     if (scr.editing) {
-      let newVersion = null;
+      const was = agents.find(x => x.id === scr.editing) || {};
+      const newVersion = nextVersionId(was), prev = currentVersion(was);
       setAgents(agents.map(x => {
         if (x.id !== scr.editing) return x;
-        newVersion = nextVersionId(x);
         const merged = { ...x, ...draft, id: x.id };
         return {
           ...merged,
-          // an edit is a new draft version; deploying it stays a separate decision
+          // every save is a new version, and it is the one the agent runs from now on
           versions: [...(x.versions || []), {
-            id: newVersion, author: ME, when: nowStamp(), deployed: false,
+            id: newVersion, author: ME, when: nowStamp(),
             changed: scr.recovered ? 'Recovered ' + scr.recovered : 'Edited the agent',
             cfg: configOf(merged)
-          }],
-          dirty: null
+          }]
         };
       }));
-      toast('Saved as ' + (newVersion || 'a new draft') + '. Deploy it when you are ready.');
+      toast('Saved as ' + newVersion + '. ' + (isLive(was)
+        ? 'It replaces ' + (prev ? prev.id : 'the previous version') + ' in ' + andList(dialersOf(was)) + ' from the next interaction.'
+        : 'It is now the current version.'));
       setScr({
         n: 'agent',
         id: scr.editing
@@ -2522,15 +3003,13 @@ function App() {
         ...draft,
         id,
         calls: 0,
-        note: 'No calls yet',
         assignedToDialer: false,
         dialers: [],
-        lastDeployed: null,
-        versions: [{ id: 'v1', author: ME, when: nowStamp(), deployed: false, changed: 'First version',
+        versions: [{ id: 'v1', author: ME, when: nowStamp(), changed: 'First version',
           cfg: configOf(draft) }],
         extraRules: []
       }]);
-      toast('Saved as a working draft. Deploy it when you are ready.');
+      toast('Saved as v1. Add it to a dialer in the Outbound Hub to put it live.');
       setScr({
         n: 'agent',
         id
@@ -2610,8 +3089,12 @@ function App() {
     const common = {
       draft,
       set,
-      next: () => step === 5 ? finish() : go(step + 1),
-      back: () => go(step - 1)
+      // the agent is saved from the Rules step; Test is opened from the agent page and
+      // only ever goes back — it never writes a version
+      // saving an edit of an agent that is live in a dialer asks first
+      next: () => step === 4 ? (scr.editing && isLive(agents.find(x => x.id === scr.editing) || {}) ? setAskSave(true) : finish()) : step === 5 ? (scr.from === 'agent' ? setScr({ n: 'agent', id: scr.editing }) : go(4)) : go(step + 1),
+      back: () => go(step - 1),
+      testExit: scr.from === 'agent' ? 'agent' : 'rules'
     };
     body = /*#__PURE__*/React.createElement("div", {
       className: "panel"
@@ -2630,6 +3113,8 @@ function App() {
   }
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Shell, {
     crumb: crumb,
+    uiLang: uiLang,
+    onUiLang: switchUi,
     here: scr.n === 'interactions' || scr.n === 'ix' ? 'interactions' : 'list',
     onGo: where => setScr({
       n: where
@@ -2637,7 +3122,11 @@ function App() {
     onHome: () => setScr({
       n: 'list'
     })
-  }, body), talk && /*#__PURE__*/React.createElement(Modal, {
+  }, body), askSave && /*#__PURE__*/React.createElement(SaveLiveWarning, {
+    agent: agents.find(x => x.id === scr.editing),
+    onCancel: () => setAskSave(false),
+    onConfirm: () => { setAskSave(false); finish(); }
+  }), talk && /*#__PURE__*/React.createElement(Modal, {
     title: "Tell us about the job",
     onClose: () => setTalk(false),
     actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
