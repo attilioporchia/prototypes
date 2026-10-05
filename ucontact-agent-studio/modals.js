@@ -228,7 +228,6 @@ const ES = {
   'tells the customer where to pay':'le dice al cliente dónde pagar',
   'How the customer pays once a date is agreed.':'Cómo paga el cliente una vez acordada la fecha.',
   'Where to pay':'Dónde pagar', 'Any Banco Sol branch, or the app':'Cualquier sucursal de Banco Sol, o la app',
-  'The link goes to the channel the contact list holds — the agent never reads out a phone number or an email.':'El enlace va al canal que tiene la lista de contactos: el agente nunca lee en voz alta un teléfono ni un correo.',
   'It opens the same way every time — first the disclosure, which cannot be removed:':'Siempre empieza igual: primero el aviso, que no se puede quitar:',
   'It opens the same way every time — first the disclosure, which cannot be removed, only reworded:':'Siempre empieza igual: primero el aviso, que no se puede quitar, solo cambiar de redacción:',
   'Required by law — cannot be removed':'Exigido por ley: no se puede quitar', 'Required disclosure — cannot be removed':'Aviso obligatorio: no se puede quitar',
@@ -240,10 +239,14 @@ const ES = {
   'Keep it to one sentence.':'Que sea una sola frase.', 'says it in':'la dice en',
   'Customer':'Cliente', 'Caller':'Quien llama',
   /* collections: balance mentions, offers, closing line, promise */
-  'It applies whenever a date is recorded — an accepted offer or the date the customer gives. With no date, the call ends without it. The place may include {contract}.':'Se aplica siempre que se registra una fecha: una oferta aceptada o la fecha que da el cliente. Sin fecha, la llamada termina sin este paso. El lugar puede incluir {contract}.',
   'and otherwise asks when the customer intends to pay':'y si no, pregunta cuándo piensa pagar el cliente',
   'and asks when the customer intends to pay':'y pregunta cuándo piensa pagar el cliente',
   'Once a date is agreed, it':'Una vez acordada una fecha, el agente', '. Once a date is agreed, it':'. Una vez acordada una fecha, el agente',
+  'If no date is agreed, it':'Si no se acuerda una fecha, el agente', '. If no date is agreed, it':'. Si no se acuerda una fecha, el agente',
+  'ends the call':'termina la llamada', 'hands it to a person':'la pasa a una persona',
+  'What it does when the customer gives no date at all.':'Qué hace cuando el cliente no da ninguna fecha.',
+  'It hands over the same way as when someone asks for a person: it':'La pasa igual que cuando alguien pide una persona: el agente',
+  'If no date is agreed':'Si no se acuerda una fecha',
   'And it ends every call with':'Y termina cada llamada con', 'It ends every call with':'Termina cada llamada con',
   'It also mentions:':'También menciona:', 'It also mentions':'También menciona',
   'how long the payment is overdue':'cuánto tiempo lleva de atraso el pago', 'the contract or account number':'el número de contrato o de cuenta',
@@ -814,6 +817,10 @@ const promiseFor = (o, id, stated) => id === 'intent'
   : {offer:offerLabel(o, id), amount:offerAmount(o, id),
      date: id === 'date5' ? dateIn(paramVal(o, 'date5')) : id === 'twopart' ? dateIn(paramVal(o, 'twopart')) : dateIn(0)};
 /* the optional last line, read word for word at the end of every call */
+/* What happens when the customer gives no date at all: end, or the same hand-off as "asks for a person". */
+const NO_DATE = [{id:'end', v:'ends the call'}, {id:'handover', v:'hands it to a person'}];
+const noDateOf    = o => val(NO_DATE, ((o && o.tokens) || {}).noDate || 'end');
+const noDateLabel = o => noDateOf(o).v;
 const closingOf = o => ((((o && o.tokens) || {}).closing) || '').trim();
 
 /* Two collections goals hold a number the supervisor taps rather than types. */
@@ -975,7 +982,9 @@ function agentPrompt(d){
     } else lines.push('- Make no payment offer.');
     lines.push(`- If no offer is accepted${offers.length ? '' : ' (there are none)'}, ask when the customer intends to pay and record that date: ${say(intentSay(d))}`);
     lines.push(`- Once a date is recorded — an accepted offer or the date the customer gave — you ${asYou(paymentLabel(d))}. Say something like ${say(paymentSay(d))}`);
-    lines.push('- If no date is recorded, end the call. The payment step does not apply.');
+    lines.push(noDateOf(d).id === 'handover'
+      ? `- If no date is agreed, hand the call over the same way as when the customer asks for a person (you ${asYou(handLabel(d))}). Record no promise.`
+      : '- If no date is agreed, thank the customer, say the closing line and end the call. Record no promise.');
     lines.push('- Whenever you reach a date, record the promise: the offer accepted (or "intent"), the amount and the date.');
   }
   lines.push('');
@@ -1311,6 +1320,7 @@ const CFG_SCALARS = [
                                          if(m.contract) xs.push('the contract number (' + colOf(c,'contract') + ')');
                                          return xs.length ? andList(xs) : 'nothing else'; }},
   {k:'How payment is arranged',        when:c => c.template === 'collections', get:c => paymentLabel(c)},
+  {k:'If no date is agreed',           when:c => c.template === 'collections', get:c => noDateLabel(c)},
   {k:'Closing line',                   when:c => c.template === 'collections',
                                        get:c => closingOf(c) ? '\u201c' + closingOf(c) + '\u201d' : 'none', long:true},
   {k:'Opening line',      get:c => '\u201c' + (c.opener || '') + '\u201d', long:true},
@@ -2288,7 +2298,7 @@ function seedFromTemplate(d, tid) {
       // collections only: what it says about the balance, and how the customer pays
       ...(tid === 'collections' ? { disclose: 'amount', amount: AMOUNT_PLACEHOLDER, payment: 'channel', paymentPlace: '',
         mentions: { overdue: false, contract: false }, overdueUnit: 'days', cols: { ...LIST_COLS },
-        offers: OFFER_IDS.map(id => ({ id, on: id === 'date5' })), closing: '' } : {})
+        offers: OFFER_IDS.map(id => ({ id, on: id === 'date5' })), closing: '', noDate: 'end' } : {})
     },
     opener: d.lang === 'en'
       ? (inbound ? (t.inOpenerEn || t.inOpener) : (t.openerEn || t.opener))
@@ -3133,13 +3143,25 @@ function StepBrief({
     placeholder: "Any Banco Sol branch, quoting contract {contract}",
     "aria-label": "Where to pay",
     onChange: e => setTok('paymentPlace', e.target.value)
-  }), /*#__PURE__*/React.createElement("div", {
+  }));
+  const noDateChip = col && /*#__PURE__*/React.createElement(Chip, {
+    label: noDateLabel(draft),
+    hint: "What it does when the customer gives no date at all.",
+    isOpen: open === 'nodate',
+    onOpen: tog('nodate')
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "radiogroup"
+  }, NO_DATE.map(o => /*#__PURE__*/React.createElement(Option, {
+    key: o.id,
+    on: o.id === noDateOf(draft).id,
+    onClick: () => {
+      setTok('noDate', o.id);
+      setOpen(null);
+    }
+  }, o.v))), noDateOf(draft).id === 'handover' && /*#__PURE__*/React.createElement("div", {
     className: "note",
     style: { marginTop: 10 }
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "The link goes to the channel the contact list holds \u2014 the agent never reads out a phone number or an email.")), /*#__PURE__*/React.createElement("div", {
-    className: "note",
-    style: { marginTop: 8 }
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "It applies whenever a date is recorded \u2014 an accepted offer or the date the customer gives. With no date, the call ends without it. The place may include {contract}.")));
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "It hands over the same way as when someone asks for a person: it ", handLabel(draft), ".")));
   const companyChip = /*#__PURE__*/React.createElement(Chip, {
     label: tk.company,
     hint: "The name the agent says out loud.",
@@ -3187,7 +3209,7 @@ function StepBrief({
     set: set,
     open: open,
     tog: tog
-  }), ', ', fallbackPhrase(draft), '.', ' ', "Once a date is agreed, it ", payChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, t.mid ? ', ' + t.mid.replace(/,?\s*and$/, '') + ', then ' : ', then ', /*#__PURE__*/React.createElement(Chip, {
+  }), ', ', fallbackPhrase(draft), '.', ' ', "Once a date is agreed, it ", payChip, ".", ' ', "If no date is agreed, it ", noDateChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, t.mid ? ', ' + t.mid.replace(/,?\s*and$/, '') + ', then ' : ', then ', /*#__PURE__*/React.createElement(Chip, {
     label: goal.v,
     hint: "The one thing the call is for.",
     isOpen: open === 'goal',
@@ -3536,10 +3558,13 @@ function collectionsTurn(s, d, history, pick) {
     return colOffer(d, i, pick, pick('Puedo ofrecerle esto: ', 'Here is what I can offer: '), 'Offer: a reduced balance without interest');
   }
   if (DECLINE.test(s)) {
-    if (stage === 'intent') return {
+    if (stage === 'intent') return noDateOf(d).id === 'handover' ? {
+      txt: pick('Entiendo. Prefiero que lo vea una persona. ', 'I understand. I would rather a person looked at this. ')
+        + saysIn(val(handoffFor(d.template), d.tokens.handoff), langOf(d)),
+      why: 'No date agreed → hands it to a person · ' + handLabel(d), stage: 'done' } : {
       txt: pick('Entiendo. Dejo constancia de que por ahora no puede darme una fecha. Gracias por su tiempo.',
         'I understand. I will note that you cannot give me a date for now. Thanks for your time.') + colEnd(d),
-      why: 'No date recorded → the call ends · the payment step does not apply', stage: 'done' };
+      why: 'No date agreed → ends the call · no promise, no payment step', stage: 'done' };
     if (typeof stage === 'number') return colOffer(d, stage + 1, pick, pick('Entiendo. ', 'I understand. '));
     return colOffer(d, 0, pick, pick('Entiendo. ', 'I understand. '));
   }
@@ -5784,7 +5809,7 @@ function AgentSummary({
   const others = otherRules(a);
   return /*#__PURE__*/React.createElement("div", {
     className: "brief-prose"
-  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement(V, null, p.name), " ", inb ? 'answers calls to ' : template(a.template).who ? 'calls ' + template(a.template).who + ' ' : 'calls ', /*#__PURE__*/React.createElement(V, null, a.tokens.company), " in ", /*#__PURE__*/React.createElement(V, null, LANGS[p.lang].name), ".", ' ', "It ", a.template === 'collections' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(V, null, ident.v), ", ", /*#__PURE__*/React.createElement(V, null, discloseFull(a)), ", ", /*#__PURE__*/React.createElement(V, null, offersLabel(a)), ", ", fallbackPhrase(a), ". Once a date is agreed, it ", /*#__PURE__*/React.createElement(V, null, paymentLabel(a)), ".") : /*#__PURE__*/React.createElement(React.Fragment, null, a.template !== 'reception' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(V, null, ident.v), ", then "), /*#__PURE__*/React.createElement(V, null, goalLabel(a)), ".")), /*#__PURE__*/React.createElement("p", null, "Every call opens with the fixed disclosure, then ", /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement(V, null, p.name), " ", inb ? 'answers calls to ' : template(a.template).who ? 'calls ' + template(a.template).who + ' ' : 'calls ', /*#__PURE__*/React.createElement(V, null, a.tokens.company), " in ", /*#__PURE__*/React.createElement(V, null, LANGS[p.lang].name), ".", ' ', "It ", a.template === 'collections' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(V, null, ident.v), ", ", /*#__PURE__*/React.createElement(V, null, discloseFull(a)), ", ", /*#__PURE__*/React.createElement(V, null, offersLabel(a)), ", ", fallbackPhrase(a), ". Once a date is agreed, it ", /*#__PURE__*/React.createElement(V, null, paymentLabel(a)), ". If no date is agreed, it ", /*#__PURE__*/React.createElement(V, null, noDateLabel(a)), ".") : /*#__PURE__*/React.createElement(React.Fragment, null, a.template !== 'reception' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(V, null, ident.v), ", then "), /*#__PURE__*/React.createElement(V, null, goalLabel(a)), ".")), /*#__PURE__*/React.createElement("p", null, "Every call opens with the fixed disclosure, then ", /*#__PURE__*/React.createElement("span", {
     className: "pq"
   }, "\u201C", a.opener, "\u201D"), a.template === 'collections' && closingOf(a) && /*#__PURE__*/React.createElement(React.Fragment, null, ' ', "It ends every call with ", /*#__PURE__*/React.createElement("span", {
     className: "pq"
@@ -7761,5 +7786,12 @@ A('an unticked mention shows no field', colBrief(CB, 'disclose').indexOf('value=
 var CLP = colBrief(CB, 'closing');
 A('the closing line popover is optional and empty by default', strip(CLP).indexOf('Optional. Read word for word at the end of every call.')>-1
   && CLP.indexOf('aria-label="Closing line"')>-1 && CLP.indexOf('no closing line — add one')>-1);
+
+/* v82 · the payment popover lost its notes; the no-date chip offers two outcomes */
+A('the payment popover carries no notes any more', pyC.indexOf('never reads out a phone number')===-1 && pyC.indexOf('It applies whenever a date is recorded')===-1);
+var NDC = colBrief(CB, 'nodate'), NDH = colBrief({...CB, tokens:{...CB.tokens, noDate:'handover'}}, 'nodate');
+A('the no-date chip offers end or hand over', NDC.indexOf('role="radiogroup"')>-1 && NDC.indexOf('>ends the call<')>-1 && NDC.indexOf('hands it to a person')>-1);
+A('handing over explains it is the same hand-off as asking for a person', NDH.indexOf('the same way as when someone asks for a person')>-1
+  && NDH.indexOf(handLabel(CB))>-1 && NDC.indexOf('the same way as when someone asks for a person')===-1);
 
 out.join('\n');

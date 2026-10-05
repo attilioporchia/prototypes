@@ -829,7 +829,7 @@ function seedFromTemplate(d, tid) {
       // collections only: what it says about the balance, and how the customer pays
       ...(tid === 'collections' ? { disclose: 'amount', amount: AMOUNT_PLACEHOLDER, payment: 'channel', paymentPlace: '',
         mentions: { overdue: false, contract: false }, overdueUnit: 'days', cols: { ...LIST_COLS },
-        offers: OFFER_IDS.map(id => ({ id, on: id === 'date5' })), closing: '' } : {})
+        offers: OFFER_IDS.map(id => ({ id, on: id === 'date5' })), closing: '', noDate: 'end' } : {})
     },
     opener: d.lang === 'en'
       ? (inbound ? (t.inOpenerEn || t.inOpener) : (t.openerEn || t.opener))
@@ -1674,13 +1674,25 @@ function StepBrief({
     placeholder: "Any Banco Sol branch, quoting contract {contract}",
     "aria-label": "Where to pay",
     onChange: e => setTok('paymentPlace', e.target.value)
-  }), /*#__PURE__*/React.createElement("div", {
+  }));
+  const noDateChip = col && /*#__PURE__*/React.createElement(Chip, {
+    label: noDateLabel(draft),
+    hint: "What it does when the customer gives no date at all.",
+    isOpen: open === 'nodate',
+    onOpen: tog('nodate')
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "radiogroup"
+  }, NO_DATE.map(o => /*#__PURE__*/React.createElement(Option, {
+    key: o.id,
+    on: o.id === noDateOf(draft).id,
+    onClick: () => {
+      setTok('noDate', o.id);
+      setOpen(null);
+    }
+  }, o.v))), noDateOf(draft).id === 'handover' && /*#__PURE__*/React.createElement("div", {
     className: "note",
     style: { marginTop: 10 }
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "The link goes to the channel the contact list holds \u2014 the agent never reads out a phone number or an email.")), /*#__PURE__*/React.createElement("div", {
-    className: "note",
-    style: { marginTop: 8 }
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "It applies whenever a date is recorded \u2014 an accepted offer or the date the customer gives. With no date, the call ends without it. The place may include {contract}.")));
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "It hands over the same way as when someone asks for a person: it ", handLabel(draft), ".")));
   const companyChip = /*#__PURE__*/React.createElement(Chip, {
     label: tk.company,
     hint: "The name the agent says out loud.",
@@ -1728,7 +1740,7 @@ function StepBrief({
     set: set,
     open: open,
     tog: tog
-  }), ', ', fallbackPhrase(draft), '.', ' ', "Once a date is agreed, it ", payChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, t.mid ? ', ' + t.mid.replace(/,?\s*and$/, '') + ', then ' : ', then ', /*#__PURE__*/React.createElement(Chip, {
+  }), ', ', fallbackPhrase(draft), '.', ' ', "Once a date is agreed, it ", payChip, ".", ' ', "If no date is agreed, it ", noDateChip, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, t.mid ? ', ' + t.mid.replace(/,?\s*and$/, '') + ', then ' : ', then ', /*#__PURE__*/React.createElement(Chip, {
     label: goal.v,
     hint: "The one thing the call is for.",
     isOpen: open === 'goal',
@@ -2077,10 +2089,13 @@ function collectionsTurn(s, d, history, pick) {
     return colOffer(d, i, pick, pick('Puedo ofrecerle esto: ', 'Here is what I can offer: '), 'Offer: a reduced balance without interest');
   }
   if (DECLINE.test(s)) {
-    if (stage === 'intent') return {
+    if (stage === 'intent') return noDateOf(d).id === 'handover' ? {
+      txt: pick('Entiendo. Prefiero que lo vea una persona. ', 'I understand. I would rather a person looked at this. ')
+        + saysIn(val(handoffFor(d.template), d.tokens.handoff), langOf(d)),
+      why: 'No date agreed → hands it to a person · ' + handLabel(d), stage: 'done' } : {
       txt: pick('Entiendo. Dejo constancia de que por ahora no puede darme una fecha. Gracias por su tiempo.',
         'I understand. I will note that you cannot give me a date for now. Thanks for your time.') + colEnd(d),
-      why: 'No date recorded → the call ends · the payment step does not apply', stage: 'done' };
+      why: 'No date agreed → ends the call · no promise, no payment step', stage: 'done' };
     if (typeof stage === 'number') return colOffer(d, stage + 1, pick, pick('Entiendo. ', 'I understand. '));
     return colOffer(d, 0, pick, pick('Entiendo. ', 'I understand. '));
   }

@@ -566,7 +566,7 @@ function AgentSummary({agent}){
       {/* a receptionist is never offered an identity setting on its brief, so the summary must
           not claim one — it greets whoever rang in */}
       {' '}It {a.template==='collections'
-        ? <><V>{ident.v}</V>, <V>{discloseFull(a)}</V>, <V>{offersLabel(a)}</V>, {fallbackPhrase(a)}. Once a date is agreed, it <V>{paymentLabel(a)}</V>.</>
+        ? <><V>{ident.v}</V>, <V>{discloseFull(a)}</V>, <V>{offersLabel(a)}</V>, {fallbackPhrase(a)}. Once a date is agreed, it <V>{paymentLabel(a)}</V>. If no date is agreed, it <V>{noDateLabel(a)}</V>.</>
         : <>{a.template!=='reception' && <><V>{ident.v}</V>, then </>}<V>{goalLabel(a)}</V>.</>}</p>
     <p>Every call opens with the fixed disclosure, then <span className="pq">“{a.opener}”</span>
       {a.template==='collections' && closingOf(a) && <>{' '}It ends every call with <span className="pq">“{closingOf(a)}”</span></>}</p>

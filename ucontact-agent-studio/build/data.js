@@ -170,6 +170,10 @@ const promiseFor = (o, id, stated) => id === 'intent'
   : {offer:offerLabel(o, id), amount:offerAmount(o, id),
      date: id === 'date5' ? dateIn(paramVal(o, 'date5')) : id === 'twopart' ? dateIn(paramVal(o, 'twopart')) : dateIn(0)};
 /* the optional last line, read word for word at the end of every call */
+/* What happens when the customer gives no date at all: end, or the same hand-off as "asks for a person". */
+const NO_DATE = [{id:'end', v:'ends the call'}, {id:'handover', v:'hands it to a person'}];
+const noDateOf    = o => val(NO_DATE, ((o && o.tokens) || {}).noDate || 'end');
+const noDateLabel = o => noDateOf(o).v;
 const closingOf = o => ((((o && o.tokens) || {}).closing) || '').trim();
 
 /* Two collections goals hold a number the supervisor taps rather than types. */
@@ -331,7 +335,9 @@ function agentPrompt(d){
     } else lines.push('- Make no payment offer.');
     lines.push(`- If no offer is accepted${offers.length ? '' : ' (there are none)'}, ask when the customer intends to pay and record that date: ${say(intentSay(d))}`);
     lines.push(`- Once a date is recorded — an accepted offer or the date the customer gave — you ${asYou(paymentLabel(d))}. Say something like ${say(paymentSay(d))}`);
-    lines.push('- If no date is recorded, end the call. The payment step does not apply.');
+    lines.push(noDateOf(d).id === 'handover'
+      ? `- If no date is agreed, hand the call over the same way as when the customer asks for a person (you ${asYou(handLabel(d))}). Record no promise.`
+      : '- If no date is agreed, thank the customer, say the closing line and end the call. Record no promise.');
     lines.push('- Whenever you reach a date, record the promise: the offer accepted (or "intent"), the amount and the date.');
   }
   lines.push('');
@@ -667,6 +673,7 @@ const CFG_SCALARS = [
                                          if(m.contract) xs.push('the contract number (' + colOf(c,'contract') + ')');
                                          return xs.length ? andList(xs) : 'nothing else'; }},
   {k:'How payment is arranged',        when:c => c.template === 'collections', get:c => paymentLabel(c)},
+  {k:'If no date is agreed',           when:c => c.template === 'collections', get:c => noDateLabel(c)},
   {k:'Closing line',                   when:c => c.template === 'collections',
                                        get:c => closingOf(c) ? '\u201c' + closingOf(c) + '\u201d' : 'none', long:true},
   {k:'Opening line',      get:c => '\u201c' + (c.opener || '') + '\u201d', long:true},
