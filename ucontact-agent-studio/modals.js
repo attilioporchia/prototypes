@@ -468,6 +468,19 @@ const ES = {
   'Goal: books from the connected calendar':'Objetivo: agenda en el calendario conectado', 'Goal setting → takes a message instead':'Objetivo → toma un recado en su lugar',
   'Nothing in the business profile yet → takes a message':'Todavía no hay nada en el perfil de la empresa → toma un recado',
   'Live':'En vivo', 'Claude':'Claude', 'Live reply failed → script':'Falló la respuesta en vivo → guion',
+  /* the three-dot menu on each agent card */
+  'More actions':'Más acciones', 'Duplicate':'Duplicar', 'Delete':'Eliminar',
+  /* the disclaimers on every save and on restore */
+  'Save a new version?':'¿Guardar una nueva versión?', 'Restore and replace':'Restaurar y reemplazar',
+  'Saving brings back':'Guardar recupera la configuración de', '’s setup as':'como', 'Saving writes':'Guardar crea',
+  'and replaces':'y reemplaza a', ', the current version':', la versión actual',
+  '. The new version takes over in every one of them at once.':'. La nueva versión toma el control en todos a la vez.',
+  'It is not in a dialer, so no interaction is affected now. Whichever dialer it is added to will run':'No está en un discador, así que ahora no se ve afectada ninguna interacción. El discador al que se agregue usará',
+  'Restoring opens':'Restaurar abre la configuración de',
+  '’s setup on the Scope screen so you can review it. Nothing changes until you save it there.':'en la pantalla de Alcance para que la revises. Nada cambia hasta que la guardes ahí.',
+  'Saving it then writes':'Al guardarla se crea', 'Review':'Revisar',
+  ', so the restored setup takes over in every one of them at once. Any interactions in progress will be affected.':', así que la configuración restaurada toma el control en todos a la vez. Las interacciones en curso se verán afectadas.',
+  'It is not in a dialer, so no interaction is affected now.':'No está en un discador, así que ahora no se ve afectada ninguna interacción.',
   /* no drafts: saving replaces the current version; Live = in a dialer */
   'Updating…':'Actualizando…', 'Not saved yet':'Sin guardar todavía',
   'An agent runs inside a dialer. It is live only while it is in one, and the agent page says which dialers are running it. Dialers are assigned in the Outbound Hub, not here.':'Un agente corre dentro de un discador. Solo está en vivo mientras está en uno, y la página del agente dice qué discadores lo usan. Los discadores se asignan en el Outbound Hub, no aquí.',
@@ -586,6 +599,13 @@ const ES_RX = [
   [/^AI agent · (.+)$/, m => 'Agente de IA · ' + tr(m[1])],
   [/^calls (.+)$/, m => 'llama a ' + tr(m[1])],
   [/^Subject: (.+)$/, m => 'Asunto: ' + m[1]],
+  [/^More actions for (.+)$/, m => 'Más acciones para ' + m[1]],
+  [/^Actions for (.+)$/, m => 'Acciones para ' + m[1]],
+  [/^Duplicated as (.+)\. It is not in a dialer, so it is not live\.$/, m => 'Duplicado como ' + m[1] + '. No está en un discador, así que no está en vivo.'],
+  [/^Duplicated from (.+) (v\d+)$/, m => 'Duplicado de ' + m[1] + ' ' + m[2]],
+  [/^Restore (v\d+)\?$/, m => '¿Restaurar ' + m[1] + '?'],
+  [/^(v\d+) stays in the history and can be restored the same way\.$/, m => m[1] + ' queda en el historial y se puede restaurar de la misma forma.'],
+  [/^(v\d+) stays in the history\.$/, m => m[1] + ' queda en el historial.'],
   [/^Live · running in (.+)$/, m => 'En vivo · corriendo en ' + trList(m[1], true)],
   [/^· current, live in (.+)$/, m => '· actual, en vivo en ' + trList(m[1], true)],
   [/^· replaced by (v\d+)$/, m => '· reemplazada por ' + m[1]],
@@ -4344,18 +4364,22 @@ function Correction({
   }, "Apply change")))))));
 }
 
-/* Saving an edit of an agent that is live in a dialer. Saving replaces the version it runs, so the
-   warning names the dialers and that version before the supervisor commits to it. */
-function SaveLiveWarning({
+/* Every save of an existing agent replaces its current version, so it always asks first. The
+   disclaimer names the version being replaced and the one being written, says whether it is a
+   restore, and — when the agent is in a dialer — that the change reaches every dialer at once. */
+function SaveWarning({
   agent,
+  recovered,
   onCancel,
   onConfirm
 }) {
   const a = agent || {},
     dials = dialersOf(a),
-    cur = currentVersion(a);
+    live = dials.length > 0,
+    cur = currentVersion(a),
+    nv = nextVersionId(a);
   return /*#__PURE__*/React.createElement(Modal, {
-    title: "This agent is live",
+    title: recovered ? 'Restore ' + recovered + '?' : live ? "This agent is live" : "Save a new version?",
     onClose: onCancel,
     actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       className: "btn btn-gho",
@@ -4363,12 +4387,14 @@ function SaveLiveWarning({
     }, "Keep editing"), /*#__PURE__*/React.createElement("button", {
       className: "btn btn-pri",
       onClick: onConfirm
-    }, "Save and replace"))
+    }, recovered ? "Restore and replace" : "Save and replace"))
   }, /*#__PURE__*/React.createElement("p", {
     style: { marginTop: 0 }
-  }, /*#__PURE__*/React.createElement("b", null, a.name), " is live in ", /*#__PURE__*/React.createElement("b", null, andList(dials)), ". Saving replaces the version it is running", cur ? /*#__PURE__*/React.createElement(React.Fragment, null, ", ", /*#__PURE__*/React.createElement("b", null, cur.id)) : null, ", in every one of them at once."), /*#__PURE__*/React.createElement("div", {
+  }, recovered ? /*#__PURE__*/React.createElement(React.Fragment, null, "Saving brings back ", /*#__PURE__*/React.createElement("b", null, recovered), "\u2019s setup as ", /*#__PURE__*/React.createElement("b", null, nv)) : /*#__PURE__*/React.createElement(React.Fragment, null, "Saving writes ", /*#__PURE__*/React.createElement("b", null, nv)), cur ? /*#__PURE__*/React.createElement(React.Fragment, null, " and replaces ", /*#__PURE__*/React.createElement("b", null, cur.id), ", the current version") : null, ". ", recovered ? cur ? cur.id + ' stays in the history and can be restored the same way.' : '' : cur ? cur.id + ' stays in the history.' : ''), live ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, a.name), " is live in ", /*#__PURE__*/React.createElement("b", null, andList(dials)), ". The new version takes over in every one of them at once."), /*#__PURE__*/React.createElement("div", {
     className: "note"
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "Any interactions in progress will be affected.")));
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "Any interactions in progress will be affected."))) : /*#__PURE__*/React.createElement("div", {
+    className: "note"
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "It is not in a dialer, so no interaction is affected now. Whichever dialer it is added to will run ", nv, ".")));
 }
 
 /* ============================ APP ROOT ============================ */
@@ -4383,7 +4409,7 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [talk, setTalk] = useState(false);
-  const [askSave, setAskSave] = useState(false);   // editing a live agent: warn before saving
+  const [askSave, setAskSave] = useState(false);   // saving over the current version: warn first
   /* the interface language; every element is translated on its way to the screen (i18n.js) */
   const [uiLang, setUiLangState] = useState(UI_LANG);
   UI_LANG = uiLang;
@@ -4451,6 +4477,19 @@ function App() {
     setScr({ n: 'wizard', editing: id, recovered: v.id });
     toast(v.id + ' loaded. Review it, then save to make it the current version.');
   };
+  /* A copy starts its own history at v1 and is in no dialer, so it is never live by accident. */
+  const duplicateAgent = id => {
+    const a = agents.find(x => x.id === id);
+    if (!a) return;
+    let n = agents.length + 1;
+    while (agents.some(x => x.id === 'n' + n)) n++;
+    const cur = currentVersion(a), name = a.name + ' (copy)';
+    const copy = { ...a, id: 'n' + n, name, calls: 0, assignedToDialer: false, dialers: [],
+      versions: [{ id: 'v1', author: ME, when: nowStamp(), changed: 'Duplicated from ' + a.name + (cur ? ' ' + cur.id : ''), cfg: configOf(a) }] };
+    const i = agents.indexOf(a);
+    setAgents([...agents.slice(0, i + 1), copy, ...agents.slice(i + 1)]);
+    toast('Duplicated as ' + name + '. It is not in a dialer, so it is not live.');
+  };
   const deleteAgent = id => {
     const a = agents.find(x => x.id === id);
     setAgents(agents.filter(x => x.id !== id));
@@ -4506,6 +4545,9 @@ function App() {
   if (scr.n === 'list') body = /*#__PURE__*/React.createElement(AgentList, {
     agents: agents,
     onCreate: startCreate,
+    onEdit: editAgent,
+    onDuplicate: duplicateAgent,
+    onDelete: deleteAgent,
     onOpen: id => setScr({
       n: 'agent',
       id
@@ -4576,7 +4618,7 @@ function App() {
       // the agent is saved from the Rules step; Test is opened from the agent page and
       // only ever goes back — it never writes a version
       // saving an edit of an agent that is live in a dialer asks first
-      next: () => step === 4 ? (scr.editing && isLive(agents.find(x => x.id === scr.editing) || {}) ? setAskSave(true) : finish()) : step === 5 ? (scr.from === 'agent' ? setScr({ n: 'agent', id: scr.editing }) : go(4)) : go(step + 1),
+      next: () => step === 4 ? (scr.editing ? setAskSave(true) : finish()) : step === 5 ? (scr.from === 'agent' ? setScr({ n: 'agent', id: scr.editing }) : go(4)) : go(step + 1),
       back: () => go(step - 1),
       testExit: scr.from === 'agent' ? 'agent' : 'rules'
     };
@@ -4606,8 +4648,9 @@ function App() {
     onHome: () => setScr({
       n: 'list'
     })
-  }, body), askSave && /*#__PURE__*/React.createElement(SaveLiveWarning, {
+  }, body), askSave && /*#__PURE__*/React.createElement(SaveWarning, {
     agent: agents.find(x => x.id === scr.editing),
+    recovered: scr.recovered,
     onCancel: () => setAskSave(false),
     onConfirm: () => { setAskSave(false); finish(); }
   }), talk && /*#__PURE__*/React.createElement(Modal, {
@@ -5548,12 +5591,45 @@ function CreditsWidget() {
     className: "credits-sub mono"
   }, "credits left \xB7 renews ", CREDITS.renews));
 }
+
+/* The three-dot icon on each agent card. */
+const ICO_MORE = /*#__PURE__*/React.createElement("svg", {
+  width: "16",
+  height: "16",
+  viewBox: "0 0 24 24",
+  fill: "currentColor"
+}, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "5.5",
+  r: "1.7"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "12",
+  r: "1.7"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "18.5",
+  r: "1.7"
+}));
 function AgentList({
   agents,
   onCreate,
-  onOpen
+  onOpen,
+  onEdit,
+  onDuplicate,
+  onDelete
 }) {
   const [q, setQ] = useState('');
+  const [menu, setMenu] = useState(null); // the card whose three-dot menu is open
+  const [askDel, setAskDel] = useState(null); // the agent about to be deleted
+  /* the menu sits inside the card, so nothing in it may also open the card; stopping mousedown too
+     keeps the popover's click-outside from closing it just before the button toggles it */
+  const stop = e => e.stopPropagation();
+  const act = (fn, a) => e => {
+    e.stopPropagation();
+    setMenu(null);
+    fn(a);
+  };
   const shown = agents.filter(a => (a.name + a.tokens.company).toLowerCase().includes(q.toLowerCase()));
   return /*#__PURE__*/React.createElement("div", {
     className: "panel"
@@ -5604,6 +5680,37 @@ function AgentList({
         }
       }
     }, /*#__PURE__*/React.createElement("div", {
+      className: "ag-more-wrap",
+      onClick: stop,
+      onKeyDown: stop,
+      onMouseDown: stop
+    }, /*#__PURE__*/React.createElement("button", {
+      className: 'ag-more' + (menu === a.id ? ' open' : ''),
+      "aria-label": 'More actions for ' + a.name,
+      "aria-haspopup": "menu",
+      "aria-expanded": menu === a.id,
+      title: "More actions",
+      onClick: () => setMenu(menu === a.id ? null : a.id)
+    }, ICO_MORE), menu === a.id && /*#__PURE__*/React.createElement(Popover, {
+      align: "right",
+      onClose: () => setMenu(null)
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "ag-menu",
+      role: "menu",
+      "aria-label": 'Actions for ' + a.name
+    }, /*#__PURE__*/React.createElement("button", {
+      role: "menuitem",
+      className: "ag-mi",
+      onClick: act(onEdit, a.id)
+    }, I.pencil, "Edit"), /*#__PURE__*/React.createElement("button", {
+      role: "menuitem",
+      className: "ag-mi",
+      onClick: act(onDuplicate, a.id)
+    }, ICO_COPY, "Duplicate"), /*#__PURE__*/React.createElement("button", {
+      role: "menuitem",
+      className: "ag-mi ag-mi-dan",
+      onClick: act(setAskDel, a)
+    }, ICO_TRASH, "Delete")))), /*#__PURE__*/React.createElement("div", {
       className: "ag-top"
     }, /*#__PURE__*/React.createElement(Avatar, {
       p: p,
@@ -5649,7 +5756,25 @@ function AgentList({
     })), /*#__PURE__*/React.createElement("div", {
       className: "ag-line"
     }, "It ", goalLabel(a), "."));
-  }))));
+  }))), askDel && /*#__PURE__*/React.createElement(Modal, {
+    title: 'Delete ' + askDel.name + '?',
+    onClose: () => setAskDel(null),
+    actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-gho",
+      onClick: () => setAskDel(null)
+    }, "Keep it"), /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-dan",
+      onClick: () => {
+        const id = askDel.id;
+        setAskDel(null);
+        onDelete(id);
+      }
+    }, ICO_TRASH, "Delete agent"))
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 0
+    }
+  }, "Its brief, its rules and its interaction history go with it. This cannot be undone.", isLive(askDel) && /*#__PURE__*/React.createElement(React.Fragment, null, " ", /*#__PURE__*/React.createElement("b", null, "It is live in ", andList(dialersOf(askDel))), " \u2014 deleting it stops those calls."))));
 }
 
 /* ============================ 9 · THE AGENT PAGE ============================ */
@@ -5855,6 +5980,7 @@ function AgentPage({
   const [askDel, setAskDel] = useState(false);
   const [history, setHistory] = useState(false);
   const [viewing, setViewing] = useState(null); // a version being read read-only
+  const [askRec, setAskRec] = useState(null); // a version about to be restored: disclaim first
   const inb = a.direction === 'in';
   /* There is no separate publish step: the newest version is the one the agent runs, and it is
      live wherever the Outbound Hub has put it in a dialer. */
@@ -5870,6 +5996,7 @@ function AgentPage({
   /* Recovering loads the version onto the Scope screen for review; nothing changes until it is
      saved from there. */
   const recover = v => {
+    setAskRec(null);
     setViewing(null);
     setHistory(false);
     onRecover(a.id, v);
@@ -6020,7 +6147,7 @@ function AgentPage({
     style: {
       color: 'var(--ink-3)'
     }
-  }, I.fwd))))), viewing && /*#__PURE__*/React.createElement(Modal, {
+  }, I.fwd))))), viewing && !askRec && /*#__PURE__*/React.createElement(Modal, {
     title: viewing.id + ' · read-only',
     onClose: () => setViewing(null),
     actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
@@ -6028,7 +6155,7 @@ function AgentPage({
       onClick: () => setViewing(null)
     }, "Back"), !isCurrentVersion(a, viewing) && /*#__PURE__*/React.createElement("button", {
       className: "btn btn-pri",
-      onClick: () => recover(viewing)
+      onClick: () => setAskRec(viewing)
     }, "Recover this version"))
   }, /*#__PURE__*/React.createElement("div", {
     className: "mono",
@@ -6047,7 +6174,25 @@ function AgentPage({
     summary: template(a.template).name
   }, /*#__PURE__*/React.createElement(AgentSummary, {
     agent: agentAtVersion(a, viewing)
-  }))), askDel && /*#__PURE__*/React.createElement(Modal, {
+  }))), askRec && /*#__PURE__*/React.createElement(Modal, {
+    title: 'Restore ' + askRec.id + '?',
+    onClose: () => setAskRec(null),
+    actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-gho",
+      onClick: () => setAskRec(null)
+    }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-pri",
+      onClick: () => recover(askRec)
+    }, "Review ", askRec.id))
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 0
+    }
+  }, "Restoring opens ", /*#__PURE__*/React.createElement("b", null, askRec.id), "\u2019s setup on the Scope screen so you can review it. Nothing changes until you save it there."), /*#__PURE__*/React.createElement("p", null, "Saving it then writes ", /*#__PURE__*/React.createElement("b", null, nextVersionId(a)), " and replaces ", /*#__PURE__*/React.createElement("b", null, cur ? cur.id : 'the current version'), ", the current version."), live ? /*#__PURE__*/React.createElement("div", {
+    className: "note"
+  }, I.info, /*#__PURE__*/React.createElement("span", null, a.name, " is live in ", andList(dials), ", so the restored setup takes over in every one of them at once. Any interactions in progress will be affected.")) : /*#__PURE__*/React.createElement("div", {
+    className: "note"
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "It is not in a dialer, so no interaction is affected now."))), askDel && /*#__PURE__*/React.createElement(Modal, {
     title: 'Delete ' + a.name + '?',
     onClose: () => setAskDel(false),
     actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
@@ -7546,7 +7691,7 @@ function A(n,c,x){ out.push((c?'PASS ':'FAIL ')+n+((x&&!c)?'  << '+x:'')); }
 var noop=function(){};
 function strip(h){ return h.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
 /* Render AgentPage with its useState initialisers forced, so the modals are reachable.
-   State order in AgentPage: askDel, history, viewing. */
+   State order in AgentPage: askDel, history, viewing, askRec. */
 function page(a, seq){
   __arm(seq);
   var h;
@@ -7793,5 +7938,32 @@ var NDC = colBrief(CB, 'nodate'), NDH = colBrief({...CB, tokens:{...CB.tokens, n
 A('the no-date chip offers end or hand over', NDC.indexOf('role="radiogroup"')>-1 && NDC.indexOf('>ends the call<')>-1 && NDC.indexOf('hands it to a person')>-1);
 A('handing over explains it is the same hand-off as asking for a person', NDH.indexOf('the same way as when someone asks for a person')>-1
   && NDH.indexOf(handLabel(CB))>-1 && NDC.indexOf('the same way as when someone asks for a person')===-1);
+
+/* v83 · Recover asks first, and says what saving the restore will replace */
+var rec1 = page(A0, [false,true,V1,V1]), rec5 = page(SEED_AGENTS[4], [false,true,SEED_AGENTS[4].versions[0],SEED_AGENTS[4].versions[0]]);
+A('recover opens a disclaimer, not the Scope screen', rec1.indexOf('Restore v1?')>-1 && rec1.indexOf('Review v1')>-1 && rec1.indexOf('Cancel')>-1);
+A('it says nothing changes until it is saved', rec1.indexOf('Nothing changes until you save it there.')>-1);
+A('it names the version saving will write and the one it replaces', rec1.indexOf('Saving it then writes v4 and replaces v3 , the current version.')>-1
+  || rec1.indexOf('Saving it then writes v4 and replaces v3, the current version.')>-1);
+A('a live agent is warned about its dialers and interactions in progress', rec1.indexOf('is live in Citas_Septiembre, so the restored setup takes over')>-1
+  && rec1.indexOf('Any interactions in progress will be affected.')>-1);
+A('an agent in no dialer is told nothing is affected now', rec5.indexOf('It is not in a dialer, so no interaction is affected now.')>-1 && rec5.indexOf('in progress')===-1);
+A('the version view steps aside while the disclaimer is up', rec1.indexOf('v1 · read-only')===-1);
+A('the disclaimer renders without throwing', [rec1,rec5].every(function(h){ return h.indexOf('RENDER-FAIL')===-1; }));
+
+/* v84 · the agent card menu. AgentList's state order: q, menu, askDel. */
+function alist(seq){ __arm(seq); var h; try { h = ReactDOMServer.renderToStaticMarkup(React.createElement(AgentList,
+  {agents:SEED_AGENTS, onCreate:noop, onOpen:noop, onEdit:noop, onDuplicate:noop, onDelete:noop})); } catch(e){ h='RENDER-FAIL '+e.message; } __off(); return h; }
+var LM = alist(['', SEED_AGENTS[0].id, null]);
+A('the open menu holds Edit, Duplicate and Delete, in that order', (function(){ var m = LM.split('role="menu"')[1]||'';
+  var e = m.indexOf('>Edit</button>'), d = m.indexOf('>Duplicate</button>'), x = m.indexOf('>Delete</button>');
+  return e>-1 && e<d && d<x && (m.match(/role="menuitem"/g)||[]).length===3; })());
+A('only the chosen card opens its menu', (LM.match(/role="menu"/g)||[]).length===1 && (LM.match(/aria-expanded="true"/g)||[]).length===1);
+A('delete is marked destructive', LM.indexOf('ag-mi ag-mi-dan')>-1);
+var LD = strip(alist(['', null, SEED_AGENTS[0]])), LD3 = strip(alist(['', null, SEED_AGENTS[2]]));
+A('delete from the card asks first', LD.indexOf('Delete '+SEED_AGENTS[0].name+'?')>-1 && LD.indexOf('This cannot be undone.')>-1
+  && LD.indexOf('Keep it')>-1 && LD.indexOf('Delete agent')>-1);
+A('it warns about the dialers of a live agent, and not for one in no dialer', LD.indexOf('It is live in Citas_Septiembre')>-1 && LD3.indexOf('It is live in')===-1);
+A('the card menu renders without throwing', [LM,LD,LD3].every(function(h){ return h.indexOf('RENDER-FAIL')===-1; }));
 
 out.join('\n');

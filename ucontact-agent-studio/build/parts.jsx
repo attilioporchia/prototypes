@@ -426,8 +426,17 @@ function CreditsWidget(){
   </div>;
 }
 
-function AgentList({agents, onCreate, onOpen}){
+/* The three-dot icon on each agent card. */
+const ICO_MORE = <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+  <circle cx="12" cy="5.5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.5" r="1.7"/></svg>;
+function AgentList({agents, onCreate, onOpen, onEdit, onDuplicate, onDelete}){
   const [q, setQ] = useState('');
+  const [menu, setMenu] = useState(null);            // the card whose three-dot menu is open
+  const [askDel, setAskDel] = useState(null);        // the agent about to be deleted
+  /* the menu sits inside the card, so nothing in it may also open the card; stopping mousedown too
+     keeps the popover's click-outside from closing it just before the button toggles it */
+  const stop = e => e.stopPropagation();
+  const act = (fn, a) => e => { e.stopPropagation(); setMenu(null); fn(a); };
   const shown = agents.filter(a => (a.name+a.tokens.company).toLowerCase().includes(q.toLowerCase()));
   return <div className="panel">
     <div className="panel-hd">
@@ -447,6 +456,18 @@ function AgentList({agents, onCreate, onOpen}){
           return <div className="card ag-card" key={a.id} role="button" tabIndex={0}
             aria-label={'Open '+a.name} onClick={()=>onOpen(a.id)}
             onKeyDown={e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); onOpen(a.id); } }}>
+            <div className="ag-more-wrap" onClick={stop} onKeyDown={stop} onMouseDown={stop}>
+              <button className={'ag-more'+(menu===a.id?' open':'')} aria-label={'More actions for '+a.name}
+                aria-haspopup="menu" aria-expanded={menu===a.id} title="More actions"
+                onClick={()=>setMenu(menu===a.id?null:a.id)}>{ICO_MORE}</button>
+              {menu===a.id && <Popover align="right" onClose={()=>setMenu(null)}>
+                <div className="ag-menu" role="menu" aria-label={'Actions for '+a.name}>
+                  <button role="menuitem" className="ag-mi" onClick={act(onEdit, a.id)}>{I.pencil}Edit</button>
+                  <button role="menuitem" className="ag-mi" onClick={act(onDuplicate, a.id)}>{ICO_COPY}Duplicate</button>
+                  <button role="menuitem" className="ag-mi ag-mi-dan" onClick={act(setAskDel, a)}>{ICO_TRASH}Delete</button>
+                </div>
+              </Popover>}
+            </div>
             <div className="ag-top">
               <Avatar p={p} size={44}/>
               <div style={{minWidth:0}}>
@@ -469,6 +490,12 @@ function AgentList({agents, onCreate, onOpen}){
         })}
       </div>
     </div>
+    {askDel && <Modal title={'Delete '+askDel.name+'?'} onClose={()=>setAskDel(null)}
+      actions={<><button className="btn btn-gho" onClick={()=>setAskDel(null)}>Keep it</button>
+        <button className="btn btn-dan" onClick={()=>{ const id = askDel.id; setAskDel(null); onDelete(id); }}>{ICO_TRASH}Delete agent</button></>}>
+      <p style={{marginTop:0}}>Its brief, its rules and its interaction history go with it. This cannot be undone.
+        {isLive(askDel) && <> <b>It is live in {andList(dialersOf(askDel))}</b> — deleting it stops those calls.</>}</p>
+    </Modal>}
   </div>;
 }
 
@@ -593,6 +620,7 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
   const [askDel, setAskDel] = useState(false);
   const [history, setHistory] = useState(false);
   const [viewing, setViewing] = useState(null);      // a version being read read-only
+  const [askRec, setAskRec] = useState(null);        // a version about to be restored: disclaim first
   const inb = a.direction==='in';
   /* There is no separate publish step: the newest version is the one the agent runs, and it is
      live wherever the Outbound Hub has put it in a dialer. */
@@ -603,7 +631,7 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
 
   /* Recovering loads the version onto the Scope screen for review; nothing changes until it is
      saved from there. */
-  const recover = v => { setViewing(null); setHistory(false); onRecover(a.id, v); };
+  const recover = v => { setAskRec(null); setViewing(null); setHistory(false); onRecover(a.id, v); };
 
   return <div className="panel">
     <div className="panel-hd">
@@ -682,10 +710,10 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
       </div>
     </Modal>}
 
-    {viewing && <Modal title={viewing.id+' · read-only'} onClose={()=>setViewing(null)}
+    {viewing && !askRec && <Modal title={viewing.id+' · read-only'} onClose={()=>setViewing(null)}
       actions={<><button className="btn btn-gho" onClick={()=>setViewing(null)}>Back</button>
         {!isCurrentVersion(a,viewing) &&
-          <button className="btn btn-pri" onClick={()=>recover(viewing)}>Recover this version</button>}</>}>
+          <button className="btn btn-pri" onClick={()=>setAskRec(viewing)}>Recover this version</button>}</>}>
       <div className="mono" style={{marginBottom:8}}>{viewing.author} · {viewing.when}
         {isCurrentVersion(a,viewing) ? (live ? ' · current, live in '+andList(dials) : ' · current, not live')
           : replacedBy(viewing) ? ' · replaced by '+replacedBy(viewing) : ''}</div>
@@ -695,6 +723,18 @@ function AgentPage({agent, agents, setAgents, onBack, onEdit, onTest, onRecover,
         summary={template(a.template).name}>
         <AgentSummary agent={agentAtVersion(a, viewing)}/>
       </Section>
+    </Modal>}
+
+    {askRec && <Modal title={'Restore '+askRec.id+'?'} onClose={()=>setAskRec(null)}
+      actions={<><button className="btn btn-gho" onClick={()=>setAskRec(null)}>Cancel</button>
+        <button className="btn btn-pri" onClick={()=>recover(askRec)}>Review {askRec.id}</button></>}>
+      <p style={{marginTop:0}}>Restoring opens <b>{askRec.id}</b>’s setup on the Scope screen so you can review it.
+        Nothing changes until you save it there.</p>
+      <p>Saving it then writes <b>{nextVersionId(a)}</b> and replaces <b>{cur ? cur.id : 'the current version'}</b>, the current version.</p>
+      {live
+        ? <div className="note">{I.info}<span>{a.name} is live in {andList(dials)}, so the restored setup takes over in
+            every one of them at once. Any interactions in progress will be affected.</span></div>
+        : <div className="note">{I.info}<span>It is not in a dialer, so no interaction is affected now.</span></div>}
     </Modal>}
 
     {askDel && <Modal title={'Delete '+a.name+'?'} onClose={()=>setAskDel(false)}

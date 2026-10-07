@@ -57,8 +57,8 @@ build/head.html    the entire stylesheet
 ## Tests
 
 ```sh
-osascript -l JavaScript assert.js   # 798 behaviour assertions      → expect 0 FAIL
-osascript -l JavaScript modals.js   # 70 assertions for modal UI    → expect 0 FAIL
+osascript -l JavaScript assert.js   # 810 behaviour assertions      → expect 0 FAIL
+osascript -l JavaScript modals.js   # 83 assertions for modal UI    → expect 0 FAIL
 osascript -l JavaScript smoke.js    # renders 994 screen states     → expect 0 failures
 ```
 

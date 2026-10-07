@@ -2875,18 +2875,22 @@ function Correction({
   }, "Apply change")))))));
 }
 
-/* Saving an edit of an agent that is live in a dialer. Saving replaces the version it runs, so the
-   warning names the dialers and that version before the supervisor commits to it. */
-function SaveLiveWarning({
+/* Every save of an existing agent replaces its current version, so it always asks first. The
+   disclaimer names the version being replaced and the one being written, says whether it is a
+   restore, and — when the agent is in a dialer — that the change reaches every dialer at once. */
+function SaveWarning({
   agent,
+  recovered,
   onCancel,
   onConfirm
 }) {
   const a = agent || {},
     dials = dialersOf(a),
-    cur = currentVersion(a);
+    live = dials.length > 0,
+    cur = currentVersion(a),
+    nv = nextVersionId(a);
   return /*#__PURE__*/React.createElement(Modal, {
-    title: "This agent is live",
+    title: recovered ? 'Restore ' + recovered + '?' : live ? "This agent is live" : "Save a new version?",
     onClose: onCancel,
     actions: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       className: "btn btn-gho",
@@ -2894,12 +2898,14 @@ function SaveLiveWarning({
     }, "Keep editing"), /*#__PURE__*/React.createElement("button", {
       className: "btn btn-pri",
       onClick: onConfirm
-    }, "Save and replace"))
+    }, recovered ? "Restore and replace" : "Save and replace"))
   }, /*#__PURE__*/React.createElement("p", {
     style: { marginTop: 0 }
-  }, /*#__PURE__*/React.createElement("b", null, a.name), " is live in ", /*#__PURE__*/React.createElement("b", null, andList(dials)), ". Saving replaces the version it is running", cur ? /*#__PURE__*/React.createElement(React.Fragment, null, ", ", /*#__PURE__*/React.createElement("b", null, cur.id)) : null, ", in every one of them at once."), /*#__PURE__*/React.createElement("div", {
+  }, recovered ? /*#__PURE__*/React.createElement(React.Fragment, null, "Saving brings back ", /*#__PURE__*/React.createElement("b", null, recovered), "\u2019s setup as ", /*#__PURE__*/React.createElement("b", null, nv)) : /*#__PURE__*/React.createElement(React.Fragment, null, "Saving writes ", /*#__PURE__*/React.createElement("b", null, nv)), cur ? /*#__PURE__*/React.createElement(React.Fragment, null, " and replaces ", /*#__PURE__*/React.createElement("b", null, cur.id), ", the current version") : null, ". ", recovered ? cur ? cur.id + ' stays in the history and can be restored the same way.' : '' : cur ? cur.id + ' stays in the history.' : ''), live ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, a.name), " is live in ", /*#__PURE__*/React.createElement("b", null, andList(dials)), ". The new version takes over in every one of them at once."), /*#__PURE__*/React.createElement("div", {
     className: "note"
-  }, I.info, /*#__PURE__*/React.createElement("span", null, "Any interactions in progress will be affected.")));
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "Any interactions in progress will be affected."))) : /*#__PURE__*/React.createElement("div", {
+    className: "note"
+  }, I.info, /*#__PURE__*/React.createElement("span", null, "It is not in a dialer, so no interaction is affected now. Whichever dialer it is added to will run ", nv, ".")));
 }
 
 /* ============================ APP ROOT ============================ */
@@ -2914,7 +2920,7 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [talk, setTalk] = useState(false);
-  const [askSave, setAskSave] = useState(false);   // editing a live agent: warn before saving
+  const [askSave, setAskSave] = useState(false);   // saving over the current version: warn first
   /* the interface language; every element is translated on its way to the screen (i18n.js) */
   const [uiLang, setUiLangState] = useState(UI_LANG);
   UI_LANG = uiLang;
@@ -2982,6 +2988,19 @@ function App() {
     setScr({ n: 'wizard', editing: id, recovered: v.id });
     toast(v.id + ' loaded. Review it, then save to make it the current version.');
   };
+  /* A copy starts its own history at v1 and is in no dialer, so it is never live by accident. */
+  const duplicateAgent = id => {
+    const a = agents.find(x => x.id === id);
+    if (!a) return;
+    let n = agents.length + 1;
+    while (agents.some(x => x.id === 'n' + n)) n++;
+    const cur = currentVersion(a), name = a.name + ' (copy)';
+    const copy = { ...a, id: 'n' + n, name, calls: 0, assignedToDialer: false, dialers: [],
+      versions: [{ id: 'v1', author: ME, when: nowStamp(), changed: 'Duplicated from ' + a.name + (cur ? ' ' + cur.id : ''), cfg: configOf(a) }] };
+    const i = agents.indexOf(a);
+    setAgents([...agents.slice(0, i + 1), copy, ...agents.slice(i + 1)]);
+    toast('Duplicated as ' + name + '. It is not in a dialer, so it is not live.');
+  };
   const deleteAgent = id => {
     const a = agents.find(x => x.id === id);
     setAgents(agents.filter(x => x.id !== id));
@@ -3037,6 +3056,9 @@ function App() {
   if (scr.n === 'list') body = /*#__PURE__*/React.createElement(AgentList, {
     agents: agents,
     onCreate: startCreate,
+    onEdit: editAgent,
+    onDuplicate: duplicateAgent,
+    onDelete: deleteAgent,
     onOpen: id => setScr({
       n: 'agent',
       id
@@ -3107,7 +3129,7 @@ function App() {
       // the agent is saved from the Rules step; Test is opened from the agent page and
       // only ever goes back — it never writes a version
       // saving an edit of an agent that is live in a dialer asks first
-      next: () => step === 4 ? (scr.editing && isLive(agents.find(x => x.id === scr.editing) || {}) ? setAskSave(true) : finish()) : step === 5 ? (scr.from === 'agent' ? setScr({ n: 'agent', id: scr.editing }) : go(4)) : go(step + 1),
+      next: () => step === 4 ? (scr.editing ? setAskSave(true) : finish()) : step === 5 ? (scr.from === 'agent' ? setScr({ n: 'agent', id: scr.editing }) : go(4)) : go(step + 1),
       back: () => go(step - 1),
       testExit: scr.from === 'agent' ? 'agent' : 'rules'
     };
@@ -3137,8 +3159,9 @@ function App() {
     onHome: () => setScr({
       n: 'list'
     })
-  }, body), askSave && /*#__PURE__*/React.createElement(SaveLiveWarning, {
+  }, body), askSave && /*#__PURE__*/React.createElement(SaveWarning, {
     agent: agents.find(x => x.id === scr.editing),
+    recovered: scr.recovered,
     onCancel: () => setAskSave(false),
     onConfirm: () => { setAskSave(false); finish(); }
   }), talk && /*#__PURE__*/React.createElement(Modal, {
